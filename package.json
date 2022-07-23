@@ -1,6 +1,7 @@
 {
-  "name": "actiontest",
+  "name": "scp-action",
   "main": "lib/index.js",
+  "version": "0.1.0",
   "scripts": {
     "build": "tsc",
     "start": "tsc -w",
