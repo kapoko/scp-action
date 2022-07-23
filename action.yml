@@ -1,0 +1,38 @@
+name: 'SCP'
+description: 'SCP files to a remote destination'
+author: 'kapoko'
+inputs:
+  host:
+    description: 'ssh remote host'
+  username:
+    description: 'ssh remote user'
+  password:
+    description: 'ssh remote password'
+  port:
+    description: 'ssh remote port'
+    default: 22
+  key:
+    description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
+  proxy_host:
+    description: 'ssh proxy host'
+  proxy_username:
+    description: 'ssh proxy user'
+  proxy_password:
+    description: 'ssh proxy password'
+  proxy_port:
+    description: 'ssh proxy port'
+    default: 22
+  proxy_key:
+    description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
+  local: 
+    description: 'relative path to the local folder to be uploaded'
+  remote: 
+    description: 'full path on the remote host'
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+
+branding:
+  icon: 'copy'
+  color: 'green'
