@@ -5,7 +5,7 @@ import glob from "glob";
 import { Client, SFTPWrapper, ConnectConfig } from "ssh2";
 
 const host: string = core.getInput("host", { required: true });
-const username: string = core.getInput("user", { required: true });
+const username: string = core.getInput("username", { required: true });
 const password: string = core.getInput("password");
 const port: number = parseInt(core.getInput("port")) || 22;
 const key: string = core.getInput("key");
