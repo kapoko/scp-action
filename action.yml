@@ -4,8 +4,10 @@ author: 'kapoko'
 inputs:
   host:
     description: 'ssh remote host'
+    required: true
   username:
     description: 'ssh remote user'
+    required: true
   password:
     description: 'ssh remote password'
   port:
@@ -26,8 +28,10 @@ inputs:
     description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
   local: 
     description: 'relative path to the local folder to be uploaded'
+    required: true
   remote: 
     description: 'full path on the remote host'
+    required: true
 
 runs:
   using: 'node16'
