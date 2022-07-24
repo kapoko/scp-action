@@ -11,7 +11,7 @@ inputs:
   port:
     description: 'ssh remote port'
     default: 22
-  key:
+  private_key:
     description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
   proxy_host:
     description: 'ssh proxy host'
@@ -22,7 +22,7 @@ inputs:
   proxy_port:
     description: 'ssh proxy port'
     default: 22
-  proxy_key:
+  proxy_private_key:
     description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
   local: 
     description: 'relative path to the local folder to be uploaded'

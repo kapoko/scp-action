@@ -51,12 +51,12 @@ const host = core.getInput("host", { required: true });
 const username = core.getInput("username", { required: true });
 const password = core.getInput("password");
 const port = parseInt(core.getInput("port")) || 22;
-const key = core.getInput("key");
+const privateKey = core.getInput("private_key");
 const proxyHost = core.getInput("proxy_host");
 const proxyUsername = core.getInput("proxy_username");
 const proxyPassword = core.getInput("proxy_password");
 const proxyPort = parseInt(core.getInput("proxy_port")) || 22;
-const proxyKey = core.getInput("proxy_key");
+const proxyPrivateKey = core.getInput("proxy_private_key");
 const local = core.getInput("local", { required: true });
 const remote = core.getInput("remote", { required: true });
 core.setSecret("password");
@@ -89,11 +89,7 @@ const jumpHost = (client, config) => new Promise((resolve, reject) => {
     client.forwardOut("localhost", 0, config.host, config.port || 22, (err, stream) => __awaiter(void 0, void 0, void 0, function* () {
         if (err)
             return reject(err);
-        const forwardedClient = yield connect(new ssh2_1.Client(), {
-            sock: stream,
-            username: config.username,
-            password: config.password,
-        });
+        const forwardedClient = yield connect(new ssh2_1.Client(), Object.assign({ sock: stream }, config));
         // Close the original client when we call end on the forwardedClient
         forwardedClient.on("end", () => {
             client.end();
@@ -140,6 +136,10 @@ const exec = (client, command) => new Promise((resolve, reject) => {
 });
 const handleError = (e) => {
     console.log("Encountered an error. Full details:\n", "\x1b[31m", e, "\x1b[0m");
+    if (e instanceof Error) {
+        return core.setFailed(e);
+    }
+    core.setFailed("Encountered an error.");
 };
 function* splitToChunks(arr, n) {
     for (let i = 0; i < arr.length; i += n) {
@@ -150,7 +150,7 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const client = yield connect(new ssh2_1.Client(), 
         // Host Config
-        { host, username, password, port }, 
+        { host, username, password, port, privateKey }, 
         // Proxy config
         proxyHost
             ? {
@@ -158,6 +158,7 @@ function main() {
                 port: proxyPort,
                 username: proxyUsername,
                 password: proxyPassword,
+                privateKey: proxyPrivateKey,
             }
             : undefined).catch(handleError);
         if (!client)

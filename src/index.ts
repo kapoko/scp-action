@@ -8,12 +8,12 @@ const host: string = core.getInput("host", { required: true });
 const username: string = core.getInput("username", { required: true });
 const password: string = core.getInput("password");
 const port: number = parseInt(core.getInput("port")) || 22;
-const key: string = core.getInput("key");
+const privateKey: string = core.getInput("private_key");
 const proxyHost: string = core.getInput("proxy_host");
 const proxyUsername: string = core.getInput("proxy_username");
 const proxyPassword: string = core.getInput("proxy_password");
 const proxyPort: number = parseInt(core.getInput("proxy_port")) || 22;
-const proxyKey: string = core.getInput("proxy_key");
+const proxyPrivateKey: string = core.getInput("proxy_private_key");
 const local: string = core.getInput("local", { required: true });
 const remote: string = core.getInput("remote", { required: true });
 
@@ -68,8 +68,7 @@ const jumpHost = (client: Client, config: ConnectConfig) =>
 
         const forwardedClient = await connect(new Client(), {
           sock: stream,
-          username: config.username,
-          password: config.password,
+          ...config,
         });
 
         // Close the original client when we call end on the forwardedClient
@@ -135,6 +134,7 @@ const handleError = (e: unknown) => {
     e,
     "\x1b[0m"
   );
+  core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
 
 function* splitToChunks<T>(arr: T[], n: number) {
@@ -147,7 +147,7 @@ async function main() {
   const client = await connect(
     new Client(),
     // Host Config
-    { host, username, password, port },
+    { host, username, password, port, privateKey },
     // Proxy config
     proxyHost
       ? {
@@ -155,6 +155,7 @@ async function main() {
           port: proxyPort,
           username: proxyUsername,
           password: proxyPassword,
+          privateKey: proxyPrivateKey,
         }
       : undefined
   ).catch(handleError);
