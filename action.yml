@@ -27,10 +27,10 @@ inputs:
   proxy_private_key:
     description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
   local: 
-    description: 'relative path to the local folder to be uploaded'
+    description: 'relative path of the local folder to be uploaded'
     required: true
   remote: 
-    description: 'full path on the remote host'
+    description: 'path on the remote host'
     required: true
 
 runs:
