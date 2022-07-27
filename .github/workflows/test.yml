@@ -6,19 +6,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-all:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install dependencies
-        run: npm ci
-      
-      - name: Create some test files
         run: |
-          mkdir -p testFiles/anotherDir
-          echo "Hello" >> testFiles/hello.txt
-          echo "world" >> testFiles/anotherDir/world.txt
+          npm ci 
+          npm run build
 
       - name: Run jest tests
         run: npm test
@@ -28,6 +24,18 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PORT : ${{ secrets.PORT }}
+  
+  integration: 
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create some test files
+        run: |
+          mkdir -p testFiles/anotherDir
+          echo "Hello" >> testFiles/hello.txt
+          echo "world" >> testFiles/anotherDir/world.txt
 
       - name: Test - Upload files with key
         uses: ./
