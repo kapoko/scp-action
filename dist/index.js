@@ -1,7 +1,7 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 4822:
+/***/ 2248:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -42,27 +42,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = exports.splitToChunks = exports.connect = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __nccwpck_require__(1017);
 const core = __importStar(__nccwpck_require__(2186));
 const glob_1 = __importDefault(__nccwpck_require__(1957));
 const ssh2_1 = __nccwpck_require__(5869);
-const host = core.getInput("host", { required: true });
-const username = core.getInput("username", { required: true });
-const password = core.getInput("password");
-const port = parseInt(core.getInput("port")) || 22;
-const privateKey = core.getInput("private_key");
-const proxyHost = core.getInput("proxy_host");
-const proxyUsername = core.getInput("proxy_username");
-const proxyPassword = core.getInput("proxy_password");
-const proxyPort = parseInt(core.getInput("proxy_port")) || 22;
-const proxyPrivateKey = core.getInput("proxy_private_key");
-const local = core.getInput("local", { required: true });
-const remote = core.getInput("remote", { required: true });
-core.setSecret("password");
-core.setSecret("key");
-core.setSecret("proxy_password");
-core.setSecret("proxy_key");
 const connect = (client, config, proxyConfig) => new Promise((resolve, reject) => {
     // If there's a proxy supplied first connect there
     client.connect(proxyConfig ? proxyConfig : config);
@@ -83,13 +68,14 @@ const connect = (client, config, proxyConfig) => new Promise((resolve, reject) =
         reject(new Error("No response from server"));
     });
 });
+exports.connect = connect;
 const jumpHost = (client, config) => new Promise((resolve, reject) => {
     if (!config.host)
         return reject("Supply proxy host");
     client.forwardOut("localhost", 0, config.host, config.port || 22, (err, stream) => __awaiter(void 0, void 0, void 0, function* () {
         if (err)
             return reject(err);
-        const forwardedClient = yield connect(new ssh2_1.Client(), Object.assign({ sock: stream }, config));
+        const forwardedClient = yield (0, exports.connect)(new ssh2_1.Client(), Object.assign({ sock: stream }, config));
         // Close the original client when we call end on the forwardedClient
         forwardedClient.on("end", () => {
             client.end();
@@ -136,19 +122,33 @@ const exec = (client, command) => new Promise((resolve, reject) => {
 });
 const handleError = (e) => {
     console.log("Encountered an error. Full details:\n", "\x1b[31m", e, "\x1b[0m");
-    if (e instanceof Error) {
-        return core.setFailed(e);
-    }
-    core.setFailed("Encountered an error.");
+    core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
 function* splitToChunks(arr, n) {
     for (let i = 0; i < arr.length; i += n) {
         yield arr.slice(i, i + n);
     }
 }
-function main() {
+exports.splitToChunks = splitToChunks;
+function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const client = yield connect(new ssh2_1.Client(), 
+        const host = core.getInput("host", { required: true });
+        const username = core.getInput("username", { required: true });
+        const password = core.getInput("password");
+        const port = parseInt(core.getInput("port")) || 22;
+        const privateKey = core.getInput("private_key");
+        const proxyHost = core.getInput("proxy_host");
+        const proxyUsername = core.getInput("proxy_username");
+        const proxyPassword = core.getInput("proxy_password");
+        const proxyPort = parseInt(core.getInput("proxy_port")) || 22;
+        const proxyPrivateKey = core.getInput("proxy_private_key");
+        const local = core.getInput("local", { required: true });
+        const remote = core.getInput("remote", { required: true });
+        core.setSecret("password");
+        core.setSecret("key");
+        core.setSecret("proxy_password");
+        core.setSecret("proxy_key");
+        const client = yield (0, exports.connect)(new ssh2_1.Client(), 
         // Host Config
         { host, username, password, port, privateKey }, 
         // Proxy config
@@ -214,7 +214,7 @@ function main() {
         }
     });
 }
-main();
+exports.run = run;
 
 
 /***/ }),
@@ -28142,12 +28142,18 @@ module.exports = {"i8":"1.11.0"};
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(4822);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const scp_action_1 = __nccwpck_require__(2248);
+(0, scp_action_1.run)();
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;

@@ -61,5 +61,5 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
 
 *Warning:* although I'll try to keep it to a minimum, there might be breaking changes for the ```v0``` version of this action, until it hits `v1`.
 
-The action is writtin in Typescript so it runs immediately on Github's javascript runners without the need to build Docker images, which makes for FAST deployments 🚀. Uses [mscdex/ssh2](https://github.com/mscdex/ssh2).
+The action is written in Typescript so it runs immediately on Github's javascript runners without the need to build Docker images, which makes for FAST deployments 🚀. Uses [mscdex/ssh2](https://github.com/mscdex/ssh2).
 
