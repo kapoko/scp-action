@@ -1,0 +1,49 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  test-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create some test files
+        run: |
+          mkdir -p testFiles/anotherDir
+          echo "Hello" >> testFiles/hello.txt
+          echo "world" >> testFiles/anotherDir/world.txt
+
+      - name: Run jest tests
+        run: npm test
+        env:
+          HOST: ${{ secrets.HOST }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          PORT : ${{ secrets.PORT }}
+          USERNAME: ${{ secrets.USERNAME}}
+
+      - name: Test - Upload files with key
+        uses: ./
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          local: testFiles
+          remote: .
+
+      - name: Test - Upload files with password
+        uses: ./
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          local: testFiles
+          remote: .
