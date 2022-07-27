@@ -49,9 +49,7 @@ describe("ssh client", () => {
       username: inputs.username,
     });
 
-    expect(connection).rejects.toMatchObject({
-      code: "ENOTFOUND",
-    });
+    expect(connection).rejects.toThrow();
   });
 });
 
