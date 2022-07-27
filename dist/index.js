@@ -144,6 +144,7 @@ function run() {
         const proxyPrivateKey = core.getInput("proxy_private_key");
         const local = core.getInput("local", { required: true });
         const remote = core.getInput("remote", { required: true });
+        console.log({ username, host });
         core.setSecret("password");
         core.setSecret("key");
         core.setSecret("proxy_password");
@@ -162,7 +163,7 @@ function run() {
             }
             : undefined).catch(handleError);
         if (!client)
-            return;
+            return false;
         try {
             const sftp = yield requestSFTP(client);
             const localTrailingSlash = local.endsWith("/");
