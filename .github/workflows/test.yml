@@ -24,9 +24,10 @@ jobs:
         run: npm test
         env:
           HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PORT : ${{ secrets.PORT }}
-          USERNAME: ${{ secrets.USERNAME}}
 
       - name: Test - Upload files with key
         uses: ./
