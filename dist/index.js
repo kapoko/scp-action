@@ -48,6 +48,10 @@ const path_1 = __nccwpck_require__(1017);
 const core = __importStar(__nccwpck_require__(2186));
 const glob_1 = __importDefault(__nccwpck_require__(1957));
 const ssh2_1 = __nccwpck_require__(5869);
+core.setSecret("password");
+core.setSecret("key");
+core.setSecret("proxy_password");
+core.setSecret("proxy_key");
 const connect = (client, config, proxyConfig) => new Promise((resolve, reject) => {
     // If there's a proxy supplied first connect there
     client.connect(proxyConfig ? proxyConfig : config);
@@ -132,36 +136,23 @@ function* splitToChunks(arr, n) {
 exports.splitToChunks = splitToChunks;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const host = core.getInput("host", { required: true });
-        const username = core.getInput("username", { required: true });
-        const password = core.getInput("password");
-        const port = parseInt(core.getInput("port")) || 22;
-        const privateKey = core.getInput("private_key");
-        const proxyHost = core.getInput("proxy_host");
-        const proxyUsername = core.getInput("proxy_username");
-        const proxyPassword = core.getInput("proxy_password");
-        const proxyPort = parseInt(core.getInput("proxy_port")) || 22;
-        const proxyPrivateKey = core.getInput("proxy_private_key");
         const local = core.getInput("local", { required: true });
         const remote = core.getInput("remote", { required: true });
-        console.log({ username, host });
-        core.setSecret("password");
-        core.setSecret("key");
-        core.setSecret("proxy_password");
-        core.setSecret("proxy_key");
-        const client = yield (0, exports.connect)(new ssh2_1.Client(), 
-        // Host Config
-        { host, username, password, port, privateKey }, 
-        // Proxy config
-        proxyHost
-            ? {
-                host: proxyHost,
-                port: proxyPort,
-                username: proxyUsername,
-                password: proxyPassword,
-                privateKey: proxyPrivateKey,
-            }
-            : undefined).catch(handleError);
+        const hostConfig = {
+            host: core.getInput("host", { required: true }),
+            username: core.getInput("username", { required: true }),
+            password: core.getInput("password"),
+            port: parseInt(core.getInput("port")) || 22,
+            privateKey: core.getInput("private_key"),
+        };
+        const proxyConfig = {
+            host: core.getInput("proxy_host"),
+            username: core.getInput("proxy_username"),
+            password: core.getInput("proxy_password"),
+            port: parseInt(core.getInput("proxy_port")) || 22,
+            privateKey: core.getInput("proxy_private_key"),
+        };
+        const client = yield (0, exports.connect)(new ssh2_1.Client(), hostConfig, proxyConfig.host ? proxyConfig : undefined).catch(handleError);
         if (!client)
             return false;
         try {

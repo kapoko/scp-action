@@ -4,6 +4,11 @@ import * as core from "@actions/core";
 import glob from "glob";
 import { Client, SFTPWrapper, ConnectConfig } from "ssh2";
 
+core.setSecret("password");
+core.setSecret("key");
+core.setSecret("proxy_password");
+core.setSecret("proxy_key");
+
 export const connect = (
   client: Client,
   config: ConnectConfig,
@@ -126,38 +131,28 @@ export function* splitToChunks<T>(arr: T[], n: number) {
 }
 
 export async function run() {
-  const host: string = core.getInput("host", { required: true });
-  const username: string = core.getInput("username", { required: true });
-  const password: string = core.getInput("password");
-  const port: number = parseInt(core.getInput("port")) || 22;
-  const privateKey: string = core.getInput("private_key");
-  const proxyHost: string = core.getInput("proxy_host");
-  const proxyUsername: string = core.getInput("proxy_username");
-  const proxyPassword: string = core.getInput("proxy_password");
-  const proxyPort: number = parseInt(core.getInput("proxy_port")) || 22;
-  const proxyPrivateKey: string = core.getInput("proxy_private_key");
   const local: string = core.getInput("local", { required: true });
   const remote: string = core.getInput("remote", { required: true });
-  console.log({ username, host });
-  core.setSecret("password");
-  core.setSecret("key");
-  core.setSecret("proxy_password");
-  core.setSecret("proxy_key");
+
+  const hostConfig = {
+    host: core.getInput("host", { required: true }),
+    username: core.getInput("username", { required: true }),
+    password: core.getInput("password"),
+    port: parseInt(core.getInput("port")) || 22,
+    privateKey: core.getInput("private_key"),
+  };
+  const proxyConfig = {
+    host: core.getInput("proxy_host"),
+    username: core.getInput("proxy_username"),
+    password: core.getInput("proxy_password"),
+    port: parseInt(core.getInput("proxy_port")) || 22,
+    privateKey: core.getInput("proxy_private_key"),
+  };
 
   const client = await connect(
     new Client(),
-    // Host Config
-    { host, username, password, port, privateKey },
-    // Proxy config
-    proxyHost
-      ? {
-          host: proxyHost,
-          port: proxyPort,
-          username: proxyUsername,
-          password: proxyPassword,
-          privateKey: proxyPrivateKey,
-        }
-      : undefined
+    hostConfig,
+    proxyConfig.host ? proxyConfig : undefined
   ).catch(handleError);
 
   if (!client) return false;
