@@ -1,4 +1,4 @@
-import { expect, describe, test, beforeAll } from "@jest/globals";
+import { expect, describe, beforeAll } from "@jest/globals";
 import * as core from "@actions/core";
 import { run, connect } from "../src/scp-action";
 import { Client } from "ssh2";
@@ -11,6 +11,8 @@ const inputs = {
   local: "src",
   remote: ".",
 } as any;
+
+let client: Client;
 
 const mockGetInput = () => {
   beforeAll(() => {
@@ -30,7 +32,7 @@ describe("ssh client", () => {
   mockGetInput();
 
   it("can connect", async () => {
-    const client = await connect(new Client(), {
+    client = await connect(new Client(), {
       host: inputs.host,
       username: inputs.username,
       port: inputs.port,
@@ -43,7 +45,32 @@ describe("ssh client", () => {
     client.end();
   });
 
-  test("rejects when given non-existing host", async () => {
+  it("can connect through a proxy", async () => {
+    client = await connect(
+      new Client(),
+      {
+        host: process.env.SECOND_HOST,
+        username: process.env.SECOND_USERNAME,
+        port: parseInt(process.env.SECOND_PORT || ""),
+        privateKey: process.env.SECOND_PRIVATE_KEY,
+      },
+      {
+        host: inputs.host,
+        username: inputs.username,
+        port: inputs.port,
+        privateKey: inputs.private_key,
+      }
+    );
+
+    expect(client).toBeInstanceOf(Client);
+    expect(client).toHaveProperty("config.host", process.env.SECOND_HOST);
+  });
+
+  afterAll(() => {
+    if (client) client.end();
+  });
+
+  it("rejects when given non-existing host", async () => {
     const connection = connect(new Client(), {
       host: "non_existing_host",
       username: inputs.username,

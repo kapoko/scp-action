@@ -24,8 +24,13 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PORT : ${{ secrets.PORT }}
-  
-  integration: 
+          SECOND_HOST: ${{ secrets.SECOND_HOST }}
+          SECOND_USERNAME: ${{ secrets.SECOND_USERNAME }}
+          SECOND_PASSWORD: ${{ secrets.SECOND_PASSWORD }}
+          SECOND_PRIVATE_KEY: ${{ secrets.SECOND_PRIVATE_KEY }}
+          SECOND_PORT : ${{ secrets.SECOND_PORT }}
+
+  integration-tests: 
     needs: test
     runs-on: ubuntu-latest
     steps:
