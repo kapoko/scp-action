@@ -1,6 +1,6 @@
 # SCP Github Action 🚚 
 
-[![](https://github.com/kapoko/scp-action/workflows/Test/badge.svg)](https://github.com/kapoko/scp-action/actions)
+[![](https://github.com/kapoko/scp-action/workflows/Tests/badge.svg)](https://github.com/kapoko/scp-action/actions)
 
 Github action for copying folders from your repository to a remote host with scp-like functionality. Written in Typescript, with support for a proxy / jump host.
 
