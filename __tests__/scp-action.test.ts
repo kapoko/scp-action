@@ -8,8 +8,8 @@ const inputs = {
   port: parseInt(process.env.PORT || ""),
   username: process.env.USERNAME,
   private_key: process.env.PRIVATE_KEY,
-  local: "src",
-  remote: ".",
+  source: "src",
+  target: ".",
 } as any;
 
 let client: Client;

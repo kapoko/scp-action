@@ -14,8 +14,8 @@ Github action for copying folders from your repository to a remote host with scp
       host: ${{ secrets.HOST }}
       username: ${{ secrets.USERNAME }}
       password: ${{ secrets.PASSWORD }}
-      local: dist
-      remote: path/to/project # You can use a relative path
+      source: dist
+      target: path/to/project # You can use a relative path
 ```
 After deployment folder `dist` will be at `path/to/project/dist` on the server.
 ### Copy folder to a remote host by jumping through a proxy host
@@ -29,8 +29,8 @@ After deployment folder `dist` will be at `path/to/project/dist` on the server.
       proxy_host: ${{ secrets.PROXY_HOST }}
       proxy_username: ${{ secrets.PROXY_USERNAME }}
       proxy_password: ${{ secrets.PROXY_PASSWORD }}
-      local: dist/
-      remote: /www/path/to/project # Or an absolute path
+      source: dist/
+      target: /www/path/to/project # Or an absolute path
 ```
 Note the trailing slash after `dist/`. Now only the *contents of dist* will be inside `/www/path/to/project`.
 ### Copy folder to a remote host with a private key
@@ -41,8 +41,8 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
       host: ${{ secrets.HOST }}
       username: ${{ secrets.USERNAME }}
       private_key: ${{ secrets.PRIVATE_KEY }}
-      local: dist
-      remote: path/to/dist
+      source: dist
+      target: path/to/dist
 ```
 ## Options
 
@@ -56,8 +56,8 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
 - **proxy_password**: *string*: Proxy host ssh password
 - **proxy_port**: *number*: Proxy host ssh port (default ```22```)
 - **proxy_private_key**: *string*: Content of proxy server private key. (e.g. content of ~/.ssh/id_rsa)
-- **local**: *string* [required]: Relative path of the local folder to be uploaded
-- **remote**: *string* [required]: Path on the remote host
+- **source**: *string* [required]: Relative path of the local folder to be uploaded
+- **target**: *string* [required]: Path on the remote host
 
 ## Development
 

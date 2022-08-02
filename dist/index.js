@@ -97,9 +97,9 @@ const requestSFTP = (client) => new Promise((resolve, reject) => {
         resolve(res);
     });
 });
-const putFile = (sftp, local, remote) => new Promise((resolve, reject) => {
+const putFile = (sftp, source, target) => new Promise((resolve, reject) => {
     // TODO: Preserve file permissions flag, flag when file is 400 or lower
-    sftp.fastPut(local, remote, { mode: (0, fs_1.statSync)(local).mode }, (err) => {
+    sftp.fastPut(source, target, { mode: (0, fs_1.statSync)(source).mode }, (err) => {
         if (err)
             return reject(err);
         resolve();
@@ -136,8 +136,8 @@ function* splitToChunks(arr, n) {
 exports.splitToChunks = splitToChunks;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const local = core.getInput("local", { required: true });
-        const remote = core.getInput("remote", { required: true });
+        const source = core.getInput("source", { required: true });
+        const target = core.getInput("target", { required: true });
         const hostConfig = {
             host: core.getInput("host", { required: true }),
             username: core.getInput("username", { required: true }),
@@ -157,10 +157,10 @@ function run() {
             return false;
         try {
             const sftp = yield requestSFTP(client);
-            const localTrailingSlash = local.endsWith("/");
+            const sourceTrailingSlash = source.endsWith("/");
             // Checks
-            if (!(0, fs_1.existsSync)(local) || !(0, fs_1.lstatSync)(local).isDirectory()) {
-                throw new Error(`Local "${local}" is not a directory`);
+            if (!(0, fs_1.existsSync)(source) || !(0, fs_1.lstatSync)(source).isDirectory()) {
+                throw new Error(`Source "${source}" is not a directory`);
             }
             const globOptions = {
                 absolute: true,
@@ -168,16 +168,16 @@ function run() {
                 ignore: ["node_modules/**/*", ".git/**/*"],
                 matchBase: true,
             };
-            const directories = glob_1.default.sync(local + "**/*/", globOptions);
+            const directories = glob_1.default.sync(source + "**/*/", globOptions);
             // If there's no trailing slash we should also create the local directory on the remote
-            if (!localTrailingSlash)
-                directories.push((0, path_1.resolve)(local));
-            const files = glob_1.default.sync(local + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
+            if (!sourceTrailingSlash)
+                directories.push((0, path_1.resolve)(source));
+            const files = glob_1.default.sync(source + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
             // Make directories
             for (const dir of directories) {
-                const remoteDirPath = (0, path_1.join)(remote, (0, path_1.relative)(localTrailingSlash ? local : (0, path_1.dirname)(local), dir));
+                const remoteDirPath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), dir));
                 try {
                     yield exec(client, `mkdir -p ${remoteDirPath}`);
                     console.log(`📁 Created remote dir ${remoteDirPath}`);
@@ -190,7 +190,7 @@ function run() {
             // Upload files
             for (const chunk of [...splitToChunks(files, 64)]) {
                 const putFiles = chunk.map((f) => {
-                    const remoteFilePath = (0, path_1.join)(remote, (0, path_1.relative)(localTrailingSlash ? local : (0, path_1.dirname)(local), (0, path_1.dirname)(f)), (0, path_1.basename)(f));
+                    const remoteFilePath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), (0, path_1.dirname)(f)), (0, path_1.basename)(f));
                     return putFile(sftp, f, remoteFilePath)
                         .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
                         .catch((e) => console.log(`🛑 Error with file ${f}`, e));

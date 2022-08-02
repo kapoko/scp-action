@@ -81,10 +81,10 @@ const requestSFTP = (client: Client) =>
     });
   });
 
-const putFile = (sftp: SFTPWrapper, local: string, remote: string) =>
+const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
   new Promise<void>((resolve, reject) => {
     // TODO: Preserve file permissions flag, flag when file is 400 or lower
-    sftp.fastPut(local, remote, { mode: statSync(local).mode }, (err) => {
+    sftp.fastPut(source, target, { mode: statSync(source).mode }, (err) => {
       if (err) return reject(err);
       resolve();
     });
@@ -131,8 +131,8 @@ export function* splitToChunks<T>(arr: T[], n: number) {
 }
 
 export async function run() {
-  const local: string = core.getInput("local", { required: true });
-  const remote: string = core.getInput("remote", { required: true });
+  const source: string = core.getInput("source", { required: true });
+  const target: string = core.getInput("target", { required: true });
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),
@@ -159,11 +159,11 @@ export async function run() {
 
   try {
     const sftp = await requestSFTP(client);
-    const localTrailingSlash = local.endsWith("/");
+    const sourceTrailingSlash = source.endsWith("/");
 
     // Checks
-    if (!existsSync(local) || !lstatSync(local).isDirectory()) {
-      throw new Error(`Local "${local}" is not a directory`);
+    if (!existsSync(source) || !lstatSync(source).isDirectory()) {
+      throw new Error(`Source "${source}" is not a directory`);
     }
 
     const globOptions: glob.IOptions = {
@@ -173,11 +173,11 @@ export async function run() {
       matchBase: true,
     };
 
-    const directories = glob.sync(local + "**/*/", globOptions);
+    const directories = glob.sync(source + "**/*/", globOptions);
     // If there's no trailing slash we should also create the local directory on the remote
-    if (!localTrailingSlash) directories.push(resolve(local));
+    if (!sourceTrailingSlash) directories.push(resolve(source));
 
-    const files = glob.sync(local + "/**/*", {
+    const files = glob.sync(source + "/**/*", {
       ...globOptions,
       nodir: true,
     });
@@ -188,8 +188,8 @@ export async function run() {
     // Make directories
     for (const dir of directories) {
       const remoteDirPath = join(
-        remote,
-        relative(localTrailingSlash ? local : dirname(local), dir)
+        target,
+        relative(sourceTrailingSlash ? source : dirname(source), dir)
       );
 
       try {
@@ -205,8 +205,8 @@ export async function run() {
     for (const chunk of [...splitToChunks(files, 64)]) {
       const putFiles = chunk.map((f) => {
         const remoteFilePath = join(
-          remote,
-          relative(localTrailingSlash ? local : dirname(local), dirname(f)),
+          target,
+          relative(sourceTrailingSlash ? source : dirname(source), dirname(f)),
           basename(f)
         );
 
