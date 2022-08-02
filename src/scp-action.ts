@@ -91,25 +91,26 @@ const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
   });
 
 const exec = (client: Client, command: string) =>
-  new Promise<void>((resolve, reject) => {
+  new Promise<string[]>((resolve, reject) => {
     client.exec(command, (err, channel) => {
       if (err) {
         reject(err);
       }
 
       let stdErr: string[] = [];
+      let stdOut: string[] = [];
 
       channel.stderr.on("data", (chunk: Buffer) => {
         stdErr.push(chunk.toString());
       });
 
       channel.on("data", (chunk: Buffer) => {
-        console.log(chunk.toString());
+        stdOut.push(chunk.toString());
       });
 
       channel.on("close", () => {
         if (stdErr.length) return reject(stdErr.join("\n"));
-        resolve();
+        resolve(stdOut);
       });
     });
   });
@@ -133,6 +134,8 @@ export function* splitToChunks<T>(arr: T[], n: number) {
 export async function run() {
   const source: string = core.getInput("source", { required: true });
   const target: string = core.getInput("target", { required: true });
+  const command: string = core.getInput("command");
+  const commandAfter: string = core.getInput("commandAfter");
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),
@@ -185,6 +188,16 @@ export async function run() {
     // Sort short to long
     directories.sort((a, b) => a.length - b.length);
 
+    // Execute command
+    if (command) {
+      console.log(`🔸 Executing command`);
+      console.log(`-------------------`);
+      console.log(command);
+      console.log(`-------------------`);
+      const result = await exec(client, command);
+      result.map((str) => process.stdout.write(str));
+    }
+
     // Make directories
     for (const dir of directories) {
       const remoteDirPath = join(
@@ -216,6 +229,16 @@ export async function run() {
       });
 
       await Promise.all(putFiles);
+    }
+
+    // Execute command after
+    if (commandAfter) {
+      console.log(`🔸 Executing command after`);
+      console.log(`-------------------`);
+      console.log(commandAfter);
+      console.log(`-------------------`);
+      const result = await exec(client, commandAfter);
+      result.map((str) => process.stdout.write(str));
     }
   } catch (e) {
     handleError(e);

@@ -26,6 +26,10 @@ inputs:
     default: 22
   proxy_private_key:
     description: 'content of ssh private key. ex raw content of ~/.ssh/id_rsa'
+  command:
+    description: 'optional command to be run before the scp action is run'
+  command_after:
+    description: 'optional command to be run after the scp action is run'
   source: 
     description: 'relative path of the local folder to be uploaded'
     required: true

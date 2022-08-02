@@ -111,16 +111,17 @@ const exec = (client, command) => new Promise((resolve, reject) => {
             reject(err);
         }
         let stdErr = [];
+        let stdOut = [];
         channel.stderr.on("data", (chunk) => {
             stdErr.push(chunk.toString());
         });
         channel.on("data", (chunk) => {
-            console.log(chunk.toString());
+            stdOut.push(chunk.toString());
         });
         channel.on("close", () => {
             if (stdErr.length)
                 return reject(stdErr.join("\n"));
-            resolve();
+            resolve(stdOut);
         });
     });
 });
@@ -138,6 +139,8 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const source = core.getInput("source", { required: true });
         const target = core.getInput("target", { required: true });
+        const command = core.getInput("command");
+        const commandAfter = core.getInput("commandAfter");
         const hostConfig = {
             host: core.getInput("host", { required: true }),
             username: core.getInput("username", { required: true }),
@@ -175,6 +178,15 @@ function run() {
             const files = glob_1.default.sync(source + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
+            // Execute command
+            if (command) {
+                console.log(`🔸 Executing command`);
+                console.log(`-------------------`);
+                console.log(command);
+                console.log(`-------------------`);
+                const result = yield exec(client, command);
+                result.map((str) => process.stdout.write(str));
+            }
             // Make directories
             for (const dir of directories) {
                 const remoteDirPath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), dir));
@@ -196,6 +208,15 @@ function run() {
                         .catch((e) => console.log(`🛑 Error with file ${f}`, e));
                 });
                 yield Promise.all(putFiles);
+            }
+            // Execute command after
+            if (commandAfter) {
+                console.log(`🔸 Executing command after`);
+                console.log(`-------------------`);
+                console.log(commandAfter);
+                console.log(`-------------------`);
+                const result = yield exec(client, commandAfter);
+                result.map((str) => process.stdout.write(str));
             }
         }
         catch (e) {

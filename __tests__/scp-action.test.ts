@@ -28,7 +28,9 @@ const mockGetInput = () => {
 };
 
 describe("ssh client", () => {
-  console.log = jest.fn();
+  beforeAll(() => {
+    console.log = jest.fn();
+  });
   mockGetInput();
 
   it("can connect", async () => {
@@ -81,7 +83,11 @@ describe("ssh client", () => {
 });
 
 describe("action", () => {
-  console.log = jest.fn();
+  beforeAll(() => {
+    console.log = jest.fn();
+    process.stdout.write = jest.fn();
+  });
+
   mockGetInput();
 
   it("runs", async () => {
@@ -90,5 +96,15 @@ describe("action", () => {
     const action = run();
     await expect(action).resolves.not.toThrow();
     await expect(failed).not.toHaveBeenCalled();
+  });
+
+  it("executes commands", async () => {
+    inputs.command = "echo hello";
+    inputs.commandAfter = "echo there!";
+
+    await run();
+
+    expect(process.stdout.write).toHaveBeenCalledWith("hello\n");
+    expect(process.stdout.write).toHaveBeenCalledWith("there!\n");
   });
 });

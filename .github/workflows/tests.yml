@@ -61,3 +61,17 @@ jobs:
           port: ${{ secrets.PORT }}
           source: testFiles
           target: .
+
+      - name: Test - Execute commands
+        uses: ./
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          source: testFiles
+          target: .
+          command: |
+            uname && \
+            ls
+            whoami

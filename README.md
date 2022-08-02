@@ -20,7 +20,7 @@ Github action for copying folders from your repository to a remote host with scp
 After deployment folder `dist` will be at `path/to/project/dist` on the server.
 ### Copy folder to a remote host by jumping through a proxy host
 ```yaml
-  - name: Upload files
+  - name: Upload files through proxy
     uses: kapoko/scp-action@v0
     with:
       host: ${{ secrets.HOST }}
@@ -35,7 +35,7 @@ After deployment folder `dist` will be at `path/to/project/dist` on the server.
 Note the trailing slash after `dist/`. Now only the *contents of dist* will be inside `/www/path/to/project`.
 ### Copy folder to a remote host with a private key
 ```yaml
-  - name: Upload files
+  - name: Upload files with private key
     uses: kapoko/scp-action@v0
     with:
       host: ${{ secrets.HOST }}
@@ -44,6 +44,21 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
       source: dist
       target: path/to/dist
 ```
+### Execute command before and/or after upload
+```yaml
+  - name: Upload files and execute commands
+    uses: kapoko/scp-action@v0
+    with:
+      host: ${{ secrets.HOST }}
+      username: ${{ secrets.USERNAME }}
+      private_key: ${{ secrets.PRIVATE_KEY }}
+      source: dist
+      target: path/to/dist
+      command: whoami
+      commandAfter: | # Multiline commands are also supported
+        composer install && \
+        echo 'All done!' 
+``` 
 ## Options
 
 - **host**: *string* [required]: Hostname or IP of the remote host
@@ -56,6 +71,8 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
 - **proxy_password**: *string*: Proxy host ssh password
 - **proxy_port**: *number*: Proxy host ssh port (default ```22```)
 - **proxy_private_key**: *string*: Content of proxy server private key. (e.g. content of ~/.ssh/id_rsa)
+- **command**: *string*: Shell command to be run *before* uploading files
+- **commandAfter**: *string*: Shell command to be run *after* uploading files
 - **source**: *string* [required]: Relative path of the local folder to be uploaded
 - **target**: *string* [required]: Path on the remote host
 
