@@ -34,7 +34,7 @@ describe("ssh client", () => {
   mockGetInput();
 
   it("can connect", async () => {
-    client = await connect(new Client(), {
+    client = await connect({
       host: inputs.host,
       username: inputs.username,
       port: inputs.port,
@@ -49,7 +49,6 @@ describe("ssh client", () => {
 
   it("can connect through a proxy", async () => {
     client = await connect(
-      new Client(),
       {
         host: process.env.SECOND_HOST,
         username: process.env.SECOND_USERNAME,
@@ -73,7 +72,7 @@ describe("ssh client", () => {
   });
 
   it("rejects when given non-existing host", async () => {
-    const connection = connect(new Client(), {
+    const connection = connect({
       host: "non_existing_host",
       username: inputs.username,
     });

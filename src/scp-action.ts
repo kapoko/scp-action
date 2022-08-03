@@ -9,12 +9,10 @@ core.setSecret("key");
 core.setSecret("proxy_password");
 core.setSecret("proxy_key");
 
-export const connect = (
-  client: Client,
-  config: ConnectConfig,
-  proxyConfig?: ConnectConfig
-) =>
+export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
   new Promise<Client>((resolve, reject) => {
+    const client = new Client();
+
     // If there's a proxy supplied first connect there
     client.connect(proxyConfig ? proxyConfig : config);
 
@@ -53,7 +51,7 @@ const jumpHost = (client: Client, config: ConnectConfig) =>
       async (err, stream) => {
         if (err) return reject(err);
 
-        const forwardedClient = await connect(new Client(), {
+        const forwardedClient = await connect({
           sock: stream,
           ...config,
         });
@@ -115,6 +113,16 @@ const exec = (client: Client, command: string) =>
     });
   });
 
+const execPrettyPrint = async (client: Client, command: string) => {
+  console.log(`🔸 Executing command`);
+  console.log(`----- command -----`);
+  console.log(command);
+  console.log(`----- output ------`);
+  const result = await exec(client, command);
+  result.map((str) => process.stdout.write(str));
+  console.log(`-------------------`);
+};
+
 const handleError = (e: unknown) => {
   console.log(
     "Encountered an error. Full details:\n",
@@ -153,7 +161,6 @@ export async function run() {
   };
 
   const client = await connect(
-    new Client(),
     hostConfig,
     proxyConfig.host ? proxyConfig : undefined
   ).catch(handleError);
@@ -171,7 +178,7 @@ export async function run() {
 
     const globOptions: glob.IOptions = {
       absolute: true,
-      dot: true,
+      dot: true, // TODO make this a variable
       ignore: ["node_modules/**/*", ".git/**/*"],
       matchBase: true,
     };
@@ -189,14 +196,7 @@ export async function run() {
     directories.sort((a, b) => a.length - b.length);
 
     // Execute command
-    if (command) {
-      console.log(`🔸 Executing command`);
-      console.log(`-------------------`);
-      console.log(command);
-      console.log(`-------------------`);
-      const result = await exec(client, command);
-      result.map((str) => process.stdout.write(str));
-    }
+    if (command) await execPrettyPrint(client, command);
 
     // Make directories
     for (const dir of directories) {
@@ -232,14 +232,7 @@ export async function run() {
     }
 
     // Execute command after
-    if (commandAfter) {
-      console.log(`🔸 Executing command after`);
-      console.log(`-------------------`);
-      console.log(commandAfter);
-      console.log(`-------------------`);
-      const result = await exec(client, commandAfter);
-      result.map((str) => process.stdout.write(str));
-    }
+    if (commandAfter) await execPrettyPrint(client, commandAfter);
   } catch (e) {
     handleError(e);
   } finally {

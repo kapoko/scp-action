@@ -52,7 +52,8 @@ core.setSecret("password");
 core.setSecret("key");
 core.setSecret("proxy_password");
 core.setSecret("proxy_key");
-const connect = (client, config, proxyConfig) => new Promise((resolve, reject) => {
+const connect = (config, proxyConfig) => new Promise((resolve, reject) => {
+    const client = new ssh2_1.Client();
     // If there's a proxy supplied first connect there
     client.connect(proxyConfig ? proxyConfig : config);
     client.on("error", reject);
@@ -79,7 +80,7 @@ const jumpHost = (client, config) => new Promise((resolve, reject) => {
     client.forwardOut("localhost", 0, config.host, config.port || 22, (err, stream) => __awaiter(void 0, void 0, void 0, function* () {
         if (err)
             return reject(err);
-        const forwardedClient = yield (0, exports.connect)(new ssh2_1.Client(), Object.assign({ sock: stream }, config));
+        const forwardedClient = yield (0, exports.connect)(Object.assign({ sock: stream }, config));
         // Close the original client when we call end on the forwardedClient
         forwardedClient.on("end", () => {
             client.end();
@@ -125,6 +126,15 @@ const exec = (client, command) => new Promise((resolve, reject) => {
         });
     });
 });
+const execPrettyPrint = (client, command) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(`🔸 Executing command`);
+    console.log(`----- command -----`);
+    console.log(command);
+    console.log(`----- output ------`);
+    const result = yield exec(client, command);
+    result.map((str) => process.stdout.write(str));
+    console.log(`-------------------`);
+});
 const handleError = (e) => {
     console.log("Encountered an error. Full details:\n", "\x1b[31m", e, "\x1b[0m");
     core.setFailed(e instanceof Error ? e : "Encountered an error");
@@ -155,7 +165,7 @@ function run() {
             port: parseInt(core.getInput("proxy_port")) || 22,
             privateKey: core.getInput("proxy_private_key"),
         };
-        const client = yield (0, exports.connect)(new ssh2_1.Client(), hostConfig, proxyConfig.host ? proxyConfig : undefined).catch(handleError);
+        const client = yield (0, exports.connect)(hostConfig, proxyConfig.host ? proxyConfig : undefined).catch(handleError);
         if (!client)
             return false;
         try {
@@ -179,14 +189,8 @@ function run() {
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
             // Execute command
-            if (command) {
-                console.log(`🔸 Executing command`);
-                console.log(`-------------------`);
-                console.log(command);
-                console.log(`-------------------`);
-                const result = yield exec(client, command);
-                result.map((str) => process.stdout.write(str));
-            }
+            if (command)
+                yield execPrettyPrint(client, command);
             // Make directories
             for (const dir of directories) {
                 const remoteDirPath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), dir));
@@ -210,14 +214,8 @@ function run() {
                 yield Promise.all(putFiles);
             }
             // Execute command after
-            if (commandAfter) {
-                console.log(`🔸 Executing command after`);
-                console.log(`-------------------`);
-                console.log(commandAfter);
-                console.log(`-------------------`);
-                const result = yield exec(client, commandAfter);
-                result.map((str) => process.stdout.write(str));
-            }
+            if (commandAfter)
+                yield execPrettyPrint(client, commandAfter);
         }
         catch (e) {
             handleError(e);

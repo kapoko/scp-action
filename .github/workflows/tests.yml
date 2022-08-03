@@ -73,5 +73,5 @@ jobs:
           target: .
           command: |
             uname && \
-            ls
-            whoami
+            cd testFiles && ls
+            cd anotherDir && ls
