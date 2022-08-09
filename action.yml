@@ -39,6 +39,9 @@ inputs:
   include_dotfiles: 
     description: 'wether or not to include files starting with a dot'
     default: true
+  dry_run:
+    description: "connect to the host but don't actually upload files or execute commands"
+    default: false
 
 runs:
   using: 'node16'

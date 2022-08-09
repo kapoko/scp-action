@@ -88,7 +88,7 @@ export const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
     });
   });
 
-const exec = (client: Client, command: string) =>
+export const exec = (client: Client, command: string) =>
   new Promise<string[]>((resolve, reject) => {
     client.exec(command, (err, channel) => {
       if (err) {
@@ -144,6 +144,7 @@ export async function run() {
   const target = core.getInput("target", { required: true });
   const command = core.getInput("command");
   const commandAfter = core.getInput("command_after");
+  const dryRun = core.getBooleanInput("dry_run");
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),
@@ -152,6 +153,7 @@ export async function run() {
     port: parseInt(core.getInput("port")) || 22,
     privateKey: core.getInput("private_key"),
   };
+
   const proxyConfig = {
     host: core.getInput("proxy_host"),
     username: core.getInput("proxy_username"),
@@ -194,7 +196,7 @@ export async function run() {
     directories.sort((a, b) => a.length - b.length);
 
     // Execute command
-    if (command) await execPrettyPrint(client, command);
+    if (!dryRun && command) await execPrettyPrint(client, command);
 
     // Make directories
     for (const dir of directories) {
@@ -204,7 +206,7 @@ export async function run() {
       );
 
       try {
-        await exec(client, `mkdir -p ${remoteDirPath}`);
+        !dryRun && (await exec(client, `mkdir -p ${remoteDirPath}`));
         console.log(`📁 Created remote dir ${remoteDirPath}`);
       } catch (e) {
         console.log(`🛑 There was a problem creating folder ${remoteDirPath}`);
@@ -221,16 +223,18 @@ export async function run() {
           basename(f)
         );
 
-        return putFile(sftp, f, remoteFilePath)
-          .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
-          .catch((e) => console.log(`🛑 Error with file ${f}`, e));
+        return !dryRun
+          ? putFile(sftp, f, remoteFilePath)
+              .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
+              .catch((e) => console.log(`🛑 Error with file ${f}`, e))
+          : Promise.resolve();
       });
 
       await Promise.all(putFiles);
     }
 
     // Execute command after
-    if (commandAfter) await execPrettyPrint(client, commandAfter);
+    if (!dryRun && commandAfter) await execPrettyPrint(client, commandAfter);
   } catch (e) {
     handleError(e);
   } finally {

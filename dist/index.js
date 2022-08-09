@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.splitToChunks = exports.putFile = exports.connect = void 0;
+exports.run = exports.splitToChunks = exports.exec = exports.putFile = exports.connect = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __nccwpck_require__(1017);
 const core = __importStar(__nccwpck_require__(2186));
@@ -127,12 +127,13 @@ const exec = (client, command) => new Promise((resolve, reject) => {
         });
     });
 });
+exports.exec = exec;
 const execPrettyPrint = (client, command) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`🔸 Executing command`);
     console.log(`----- command -----`);
     console.log(command);
     console.log(`----- output ------`);
-    const result = yield exec(client, command);
+    const result = yield (0, exports.exec)(client, command);
     result.map((str) => process.stdout.write(str));
     console.log(`-------------------`);
 });
@@ -152,6 +153,7 @@ function run() {
         const target = core.getInput("target", { required: true });
         const command = core.getInput("command");
         const commandAfter = core.getInput("command_after");
+        const dryRun = core.getBooleanInput("dry_run");
         const hostConfig = {
             host: core.getInput("host", { required: true }),
             username: core.getInput("username", { required: true }),
@@ -188,13 +190,13 @@ function run() {
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
             // Execute command
-            if (command)
+            if (!dryRun && command)
                 yield execPrettyPrint(client, command);
             // Make directories
             for (const dir of directories) {
                 const remoteDirPath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), dir));
                 try {
-                    yield exec(client, `mkdir -p ${remoteDirPath}`);
+                    !dryRun && (yield (0, exports.exec)(client, `mkdir -p ${remoteDirPath}`));
                     console.log(`📁 Created remote dir ${remoteDirPath}`);
                 }
                 catch (e) {
@@ -206,14 +208,16 @@ function run() {
             for (const chunk of [...splitToChunks(files, 64)]) {
                 const putFiles = chunk.map((f) => {
                     const remoteFilePath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), (0, path_1.dirname)(f)), (0, path_1.basename)(f));
-                    return (0, exports.putFile)(sftp, f, remoteFilePath)
-                        .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
-                        .catch((e) => console.log(`🛑 Error with file ${f}`, e));
+                    return !dryRun
+                        ? (0, exports.putFile)(sftp, f, remoteFilePath)
+                            .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
+                            .catch((e) => console.log(`🛑 Error with file ${f}`, e))
+                        : Promise.resolve();
                 });
                 yield Promise.all(putFiles);
             }
             // Execute command after
-            if (commandAfter)
+            if (!dryRun && commandAfter)
                 yield execPrettyPrint(client, commandAfter);
         }
         catch (e) {

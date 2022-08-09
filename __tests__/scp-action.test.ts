@@ -10,6 +10,7 @@ const inputs = {
   username: process.env.USERNAME,
   private_key: process.env.PRIVATE_KEY,
   include_dotfiles: true,
+  dry_run: false,
   source: "src",
   target: ".",
 } as any;
@@ -127,5 +128,19 @@ describe("action", () => {
     );
 
     inputs.source = "src";
+  });
+
+  it("doesn't execute commands or upload files when dry_run is true", async () => {
+    inputs.dry_run = true;
+
+    const putFile = jest.spyOn(action, "putFile");
+    const exec = jest.spyOn(action, "exec");
+
+    await action.run();
+
+    expect(putFile).not.toBeCalled();
+    expect(exec).not.toBeCalled();
+
+    inputs.dry_run = false;
   });
 });

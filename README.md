@@ -76,6 +76,7 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
 - **source**: *string* [required]: Relative path of the local folder to be uploaded
 - **target**: *string* [required]: Path on the remote host
 - **include_dotfiles**: *boolean*: Include files starting with a dot (default ```true```)
+- **dry_run**: *boolean*: Connect to the host but don't actually upload files or execute commands (default ```false```)
 
 ## Development
 
