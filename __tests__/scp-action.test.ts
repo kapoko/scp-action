@@ -40,12 +40,24 @@ describe("ssh client", () => {
   });
   mockGetInput();
 
-  it("can connect", async () => {
+  it("can connect with a private key", async () => {
     client = await action.connect({
       host: inputs.host,
       username: inputs.username,
       port: inputs.port,
       privateKey: inputs.private_key,
+    });
+
+    expect(client).toBeInstanceOf(Client);
+    expect(client).toHaveProperty("config.host", inputs.host);
+  });
+
+  it("can connect with a password", async () => {
+    client = await action.connect({
+      host: inputs.host,
+      username: inputs.username,
+      port: inputs.port,
+      password: process.env.PASSWORD,
     });
 
     expect(client).toBeInstanceOf(Client);
