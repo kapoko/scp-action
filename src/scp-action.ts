@@ -140,10 +140,10 @@ export function* splitToChunks<T>(arr: T[], n: number) {
 }
 
 export async function run() {
-  const source: string = core.getInput("source", { required: true });
-  const target: string = core.getInput("target", { required: true });
-  const command: string = core.getInput("command");
-  const commandAfter: string = core.getInput("command_after");
+  const source = core.getInput("source", { required: true });
+  const target = core.getInput("target", { required: true });
+  const command = core.getInput("command");
+  const commandAfter = core.getInput("command_after");
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),
