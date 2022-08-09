@@ -79,7 +79,7 @@ const requestSFTP = (client: Client) =>
     });
   });
 
-const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
+export const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
   new Promise<void>((resolve, reject) => {
     // TODO: Preserve file permissions flag, flag when file is 400 or lower
     sftp.fastPut(source, target, { mode: statSync(source).mode }, (err) => {
@@ -177,10 +177,8 @@ export async function run() {
     }
 
     const globOptions: glob.IOptions = {
-      absolute: true,
-      dot: true, // TODO make this a variable
-      ignore: ["node_modules/**/*", ".git/**/*"],
-      matchBase: true,
+      dot: core.getBooleanInput("include_dotfiles"),
+      ignore: ["./node_modules/**/*", "./.git/**/*"],
     };
 
     const directories = glob.sync(source + "**/*/", globOptions);

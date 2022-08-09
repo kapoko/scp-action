@@ -36,6 +36,9 @@ inputs:
   target: 
     description: 'path on the remote host'
     required: true
+  include_dotfiles: 
+    description: 'wether or not to include files starting with a dot'
+    default: true
 
 runs:
   using: 'node16'

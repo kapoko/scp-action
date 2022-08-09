@@ -1,13 +1,15 @@
 import { expect, describe, beforeAll } from "@jest/globals";
 import * as core from "@actions/core";
-import { run, connect } from "../src/scp-action";
+
 import { Client } from "ssh2";
+import * as action from "../src/scp-action";
 
 const inputs = {
   host: process.env.HOST,
   port: parseInt(process.env.PORT || ""),
   username: process.env.USERNAME,
   private_key: process.env.PRIVATE_KEY,
+  include_dotfiles: true,
   source: "src",
   target: ".",
 } as any;
@@ -24,6 +26,10 @@ const mockGetInput = () => {
         }
         return inputs[name];
       });
+
+    jest
+      .spyOn(core, "getBooleanInput")
+      .mockImplementation((name: string) => !!inputs[name]);
   });
 };
 
@@ -34,7 +40,7 @@ describe("ssh client", () => {
   mockGetInput();
 
   it("can connect", async () => {
-    client = await connect({
+    client = await action.connect({
       host: inputs.host,
       username: inputs.username,
       port: inputs.port,
@@ -43,12 +49,10 @@ describe("ssh client", () => {
 
     expect(client).toBeInstanceOf(Client);
     expect(client).toHaveProperty("config.host", inputs.host);
-
-    client.end();
   });
 
   it("can connect through a proxy", async () => {
-    client = await connect(
+    client = await action.connect(
       {
         host: process.env.SECOND_HOST,
         username: process.env.SECOND_USERNAME,
@@ -67,12 +71,12 @@ describe("ssh client", () => {
     expect(client).toHaveProperty("config.host", process.env.SECOND_HOST);
   });
 
-  afterAll(() => {
+  afterEach(() => {
     if (client) client.end();
   });
 
   it("rejects when given non-existing host", async () => {
-    const connection = connect({
+    const connection = action.connect({
       host: "non_existing_host",
       username: inputs.username,
     });
@@ -92,8 +96,9 @@ describe("action", () => {
   it("runs", async () => {
     const failed = jest.spyOn(core, "setFailed");
 
-    const action = run();
-    await expect(action).resolves.not.toThrow();
+    const run = action.run();
+
+    await expect(run).resolves.not.toThrow();
     await expect(failed).not.toHaveBeenCalled();
   });
 
@@ -101,9 +106,26 @@ describe("action", () => {
     inputs.command = "echo hello";
     inputs.commandAfter = "echo there!";
 
-    await run();
+    await action.run();
 
     expect(process.stdout.write).toHaveBeenCalledWith("hello\n");
     expect(process.stdout.write).toHaveBeenCalledWith("there!\n");
+  });
+
+  it("doesn't upload hidden files when include_dotfiles is false", async () => {
+    inputs.include_dotfiles = false;
+    inputs.source = ".";
+
+    const putFile = jest.spyOn(action, "putFile");
+
+    await action.run();
+
+    expect(putFile).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/.env.example$/),
+      expect.anything()
+    );
+
+    inputs.source = "src";
   });
 });

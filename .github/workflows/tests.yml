@@ -39,6 +39,7 @@ jobs:
       - name: Create some test files
         run: |
           mkdir -p testFiles/anotherDir
+          touch testFiles/.secret
           echo "Hello" >> testFiles/hello.txt
           echo "world" >> testFiles/anotherDir/world.txt
 
@@ -51,6 +52,7 @@ jobs:
           port: ${{ secrets.PORT }}
           source: testFiles
           target: .
+          include_dotfiles: false
 
       - name: Test - Upload files with password
         uses: ./
