@@ -112,18 +112,15 @@ const exec = (client, command) => new Promise((resolve, reject) => {
         if (err) {
             reject(err);
         }
-        let stdErr = [];
-        let stdOut = [];
+        let output = [];
         channel.stderr.on("data", (chunk) => {
-            stdErr.push(chunk.toString());
+            output.push("err: " + chunk.toString());
         });
         channel.on("data", (chunk) => {
-            stdOut.push(chunk.toString());
+            output.push("out: " + chunk.toString());
         });
         channel.on("close", () => {
-            if (stdErr.length)
-                return reject(stdErr.join("\n"));
-            resolve(stdOut);
+            resolve(output);
         });
     });
 });

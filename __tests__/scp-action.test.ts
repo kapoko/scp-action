@@ -121,8 +121,8 @@ describe("action", () => {
 
     await action.run();
 
-    expect(process.stdout.write).toHaveBeenCalledWith("hello\n");
-    expect(process.stdout.write).toHaveBeenCalledWith("there!\n");
+    expect(process.stdout.write).toHaveBeenCalledWith("out: hello\n");
+    expect(process.stdout.write).toHaveBeenCalledWith("out: there!\n");
   });
 
   it("doesn't upload hidden files when include_dotfiles is false", async () => {

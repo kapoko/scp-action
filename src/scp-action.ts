@@ -95,20 +95,18 @@ export const exec = (client: Client, command: string) =>
         reject(err);
       }
 
-      let stdErr: string[] = [];
-      let stdOut: string[] = [];
+      let output: string[] = [];
 
       channel.stderr.on("data", (chunk: Buffer) => {
-        stdErr.push(chunk.toString());
+        output.push("err: " + chunk.toString());
       });
 
       channel.on("data", (chunk: Buffer) => {
-        stdOut.push(chunk.toString());
+        output.push("out: " + chunk.toString());
       });
 
       channel.on("close", () => {
-        if (stdErr.length) return reject(stdErr.join("\n"));
-        resolve(stdOut);
+        resolve(output);
       });
     });
   });
