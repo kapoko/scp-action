@@ -104,7 +104,7 @@ describe("action", () => {
 
   it("executes commands", async () => {
     inputs.command = "echo hello";
-    inputs.commandAfter = "echo there!";
+    inputs.command_after = "echo there!";
 
     await action.run();
 

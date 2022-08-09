@@ -143,7 +143,7 @@ export async function run() {
   const source: string = core.getInput("source", { required: true });
   const target: string = core.getInput("target", { required: true });
   const command: string = core.getInput("command");
-  const commandAfter: string = core.getInput("commandAfter");
+  const commandAfter: string = core.getInput("command_after");
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),

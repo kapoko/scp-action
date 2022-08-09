@@ -72,7 +72,7 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
 - **proxy_port**: *number*: Proxy host ssh port (default ```22```)
 - **proxy_private_key**: *string*: Content of proxy server private key. (e.g. content of ~/.ssh/id_rsa)
 - **command**: *string*: Shell command to be run *before* uploading files
-- **commandAfter**: *string*: Shell command to be run *after* uploading files
+- **command_after**: *string*: Shell command to be run *after* uploading files
 - **source**: *string* [required]: Relative path of the local folder to be uploaded
 - **target**: *string* [required]: Path on the remote host
 - **include_dotfiles**: *boolean*: Include files starting with a dot (default ```true```)
