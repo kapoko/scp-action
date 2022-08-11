@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.splitToChunks = exports.exec = exports.putFile = exports.connect = void 0;
+exports.run = exports.exec = exports.putFile = exports.connect = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __nccwpck_require__(1017);
 const core = __importStar(__nccwpck_require__(2186));
@@ -127,26 +127,25 @@ const exec = (client, command) => new Promise((resolve, reject) => {
 exports.exec = exec;
 const execPrettyPrint = (client, command) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`🔸 Executing command`);
-    console.log(`----- command -----`);
+    console.log(`------ command ------`);
     console.log(command);
-    console.log(`----- output ------`);
+    console.log(`------ output -------`);
     const result = yield (0, exports.exec)(client, command);
     result.map((str) => process.stdout.write(str));
-    console.log(`-------------------`);
+    console.log(`---------------------`);
 });
+function* splitMapToChunks(map, n) {
+    for (let i = 0; i < map.size; i += n) {
+        yield Array.from(map).slice(i, i + n);
+    }
+}
 const handleError = (e) => {
     console.log("Encountered an error. Full details:\n", "\x1b[31m", e, "\x1b[0m");
     core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
-function* splitToChunks(arr, n) {
-    for (let i = 0; i < arr.length; i += n) {
-        yield arr.slice(i, i + n);
-    }
-}
-exports.splitToChunks = splitToChunks;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const source = core.getInput("source", { required: true });
+        const source = core.getMultilineInput("source", { required: true });
         const target = core.getInput("target", { required: true });
         const command = core.getInput("command");
         const commandAfter = core.getInput("command_after");
@@ -170,20 +169,37 @@ function run() {
             return false;
         try {
             const sftp = yield requestSFTP(client);
-            const sourceTrailingSlash = source.endsWith("/");
-            // Checks
-            if (!(0, fs_1.existsSync)(source) || !(0, fs_1.lstatSync)(source).isDirectory()) {
-                throw new Error(`Source "${source}" is not a directory`);
-            }
             const globOptions = {
                 dot: core.getBooleanInput("include_dotfiles"),
                 ignore: ["./node_modules/**/*", "./.git/**/*"],
             };
-            const directories = glob_1.default.sync(source + "**/*/", globOptions);
-            // If there's no trailing slash we should also create the local directory on the remote
-            if (!sourceTrailingSlash)
-                directories.push((0, path_1.resolve)(source));
-            const files = glob_1.default.sync(source + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
+            // Checks
+            source.forEach((s) => {
+                if (!(0, fs_1.existsSync)(s) || !(0, fs_1.lstatSync)(s).isDirectory()) {
+                    throw new Error(`Source "${source}" is not a directory`);
+                }
+            });
+            // Search all directories for each line in source and return its remote counterpart path
+            const [directories, files] = source.reduce(([directories, files], searchDir) => {
+                const localDirs = glob_1.default.sync(searchDir + "/**/*/", globOptions);
+                const searchRoot = searchDir.endsWith("/")
+                    ? searchDir
+                    : (0, path_1.dirname)(searchDir);
+                // If there's no trailing slash we should also create the local directory on the remote
+                if (!searchDir.endsWith("/"))
+                    localDirs.push((0, path_1.resolve)(searchDir));
+                const remoteDirs = localDirs.map((localDir) => (0, path_1.join)(target, (0, path_1.relative)(searchRoot, localDir)));
+                const localFiles = glob_1.default.sync(searchDir + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
+                // Create a new file map and prepend the current found files
+                const fileMap = new Map((function* () {
+                    yield* files;
+                    yield* localFiles.map((f) => [
+                        f,
+                        (0, path_1.join)(target, (0, path_1.relative)(searchRoot, (0, path_1.dirname)(f)), (0, path_1.basename)(f)),
+                    ]);
+                })());
+                return [[...directories, ...remoteDirs], fileMap];
+            }, [[], new Map()]);
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
             // Execute command
@@ -191,26 +207,22 @@ function run() {
                 yield execPrettyPrint(client, command);
             // Make directories
             for (const dir of directories) {
-                const remoteDirPath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), dir));
                 try {
-                    !dryRun && (yield (0, exports.exec)(client, `mkdir -p ${remoteDirPath}`));
-                    console.log(`📁 Created remote dir ${remoteDirPath}`);
+                    !dryRun && (yield (0, exports.exec)(client, `mkdir -p ${dir}`));
+                    console.log(`📁 Created remote dir ${dir}`);
                 }
                 catch (e) {
-                    console.log(`🛑 There was a problem creating folder ${remoteDirPath}`);
+                    console.log(`🛑 There was a problem creating folder ${dir}`);
                     throw e;
                 }
             }
             // Upload files
-            for (const chunk of [...splitToChunks(files, 64)]) {
-                const putFiles = chunk.map((f) => {
-                    const remoteFilePath = (0, path_1.join)(target, (0, path_1.relative)(sourceTrailingSlash ? source : (0, path_1.dirname)(source), (0, path_1.dirname)(f)), (0, path_1.basename)(f));
-                    return !dryRun
-                        ? (0, exports.putFile)(sftp, f, remoteFilePath)
-                            .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
-                            .catch((e) => console.log(`🛑 Error with file ${f}`, e))
-                        : Promise.resolve();
-                });
+            for (const chunk of [...splitMapToChunks(files, 64)]) {
+                const putFiles = chunk.map(([f, remoteFilePath]) => !dryRun
+                    ? (0, exports.putFile)(sftp, f, remoteFilePath)
+                        .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
+                        .catch((e) => console.log(`🛑 Error with file ${f}`, e))
+                    : Promise.resolve());
                 yield Promise.all(putFiles);
             }
             // Execute command after

@@ -38,10 +38,10 @@ jobs:
       
       - name: Create some test files
         run: |
-          mkdir -p testFiles/anotherDir
-          touch testFiles/.secret
+          mkdir -p testFiles/anotherDir moreTestFiles
           echo "Hello" >> testFiles/hello.txt
           echo "world" >> testFiles/anotherDir/world.txt
+          touch moreTestFiles/.secret
 
       - name: Test - Upload files with key
         uses: ./
@@ -52,7 +52,6 @@ jobs:
           port: ${{ secrets.PORT }}
           source: testFiles
           target: .
-          include_dotfiles: false
 
       - name: Test - Upload files with password
         uses: ./
@@ -71,9 +70,22 @@ jobs:
           username: ${{ secrets.USERNAME }}
           private_key: ${{ secrets.PRIVATE_KEY }}
           port: ${{ secrets.PORT }}
-          source: testFiles
+          source: moreTestFiles
           target: .
+          include_dotfiles: false
           command: |
             uname && \
             cd testFiles && ls
             cd anotherDir && ls
+    
+      - name: Test - Multiple source directories
+        uses: ./
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          source: |
+            testFiles
+            moreTestFiles
+          target: .

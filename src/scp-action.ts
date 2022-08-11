@@ -9,6 +9,11 @@ core.setSecret("key");
 core.setSecret("proxy_password");
 core.setSecret("proxy_key");
 
+interface sourceTargetPair {
+  source: string;
+  target: string;
+}
+
 export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
   new Promise<Client>((resolve, reject) => {
     const client = new Client();
@@ -113,13 +118,19 @@ export const exec = (client: Client, command: string) =>
 
 const execPrettyPrint = async (client: Client, command: string) => {
   console.log(`🔸 Executing command`);
-  console.log(`----- command -----`);
+  console.log(`------ command ------`);
   console.log(command);
-  console.log(`----- output ------`);
+  console.log(`------ output -------`);
   const result = await exec(client, command);
   result.map((str) => process.stdout.write(str));
-  console.log(`-------------------`);
+  console.log(`---------------------`);
 };
+
+function* splitMapToChunks<T>(map: Map<string, string>, n: number) {
+  for (let i = 0; i < map.size; i += n) {
+    yield Array.from(map).slice(i, i + n);
+  }
+}
 
 const handleError = (e: unknown) => {
   console.log(
@@ -131,14 +142,8 @@ const handleError = (e: unknown) => {
   core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
 
-export function* splitToChunks<T>(arr: T[], n: number) {
-  for (let i = 0; i < arr.length; i += n) {
-    yield arr.slice(i, i + n);
-  }
-}
-
 export async function run() {
-  const source = core.getInput("source", { required: true });
+  const source = core.getMultilineInput("source", { required: true });
   const target = core.getInput("target", { required: true });
   const command = core.getInput("command");
   const commandAfter = core.getInput("command_after");
@@ -169,26 +174,54 @@ export async function run() {
 
   try {
     const sftp = await requestSFTP(client);
-    const sourceTrailingSlash = source.endsWith("/");
-
-    // Checks
-    if (!existsSync(source) || !lstatSync(source).isDirectory()) {
-      throw new Error(`Source "${source}" is not a directory`);
-    }
 
     const globOptions: glob.IOptions = {
       dot: core.getBooleanInput("include_dotfiles"),
       ignore: ["./node_modules/**/*", "./.git/**/*"],
     };
 
-    const directories = glob.sync(source + "**/*/", globOptions);
-    // If there's no trailing slash we should also create the local directory on the remote
-    if (!sourceTrailingSlash) directories.push(resolve(source));
-
-    const files = glob.sync(source + "/**/*", {
-      ...globOptions,
-      nodir: true,
+    // Checks
+    source.forEach((s) => {
+      if (!existsSync(s) || !lstatSync(s).isDirectory()) {
+        throw new Error(`Source "${source}" is not a directory`);
+      }
     });
+
+    // Search all directories for each line in source and return its remote counterpart path
+    const [directories, files] = source.reduce(
+      ([directories, files], searchDir) => {
+        const localDirs = glob.sync(searchDir + "/**/*/", globOptions);
+        const searchRoot = searchDir.endsWith("/")
+          ? searchDir
+          : dirname(searchDir);
+
+        // If there's no trailing slash we should also create the local directory on the remote
+        if (!searchDir.endsWith("/")) localDirs.push(resolve(searchDir));
+
+        const remoteDirs = localDirs.map((localDir) =>
+          join(target, relative(searchRoot, localDir))
+        );
+
+        const localFiles = glob.sync(searchDir + "/**/*", {
+          ...globOptions,
+          nodir: true,
+        });
+
+        // Create a new file map and prepend the current found files
+        const fileMap = new Map(
+          (function* () {
+            yield* files;
+            yield* localFiles.map((f) => [
+              f,
+              join(target, relative(searchRoot, dirname(f)), basename(f)),
+            ]);
+          })()
+        );
+
+        return [[...directories, ...remoteDirs], fileMap];
+      },
+      [[], new Map()] as [string[], Map<string, string>]
+    );
 
     // Sort short to long
     directories.sort((a, b) => a.length - b.length);
@@ -198,35 +231,24 @@ export async function run() {
 
     // Make directories
     for (const dir of directories) {
-      const remoteDirPath = join(
-        target,
-        relative(sourceTrailingSlash ? source : dirname(source), dir)
-      );
-
       try {
-        !dryRun && (await exec(client, `mkdir -p ${remoteDirPath}`));
-        console.log(`📁 Created remote dir ${remoteDirPath}`);
+        !dryRun && (await exec(client, `mkdir -p ${dir}`));
+        console.log(`📁 Created remote dir ${dir}`);
       } catch (e) {
-        console.log(`🛑 There was a problem creating folder ${remoteDirPath}`);
+        console.log(`🛑 There was a problem creating folder ${dir}`);
         throw e;
       }
     }
 
     // Upload files
-    for (const chunk of [...splitToChunks(files, 64)]) {
-      const putFiles = chunk.map((f) => {
-        const remoteFilePath = join(
-          target,
-          relative(sourceTrailingSlash ? source : dirname(source), dirname(f)),
-          basename(f)
-        );
-
-        return !dryRun
+    for (const chunk of [...splitMapToChunks(files, 64)]) {
+      const putFiles = chunk.map(([f, remoteFilePath]) =>
+        !dryRun
           ? putFile(sftp, f, remoteFilePath)
               .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
               .catch((e) => console.log(`🛑 Error with file ${f}`, e))
-          : Promise.resolve();
-      });
+          : Promise.resolve()
+      );
 
       await Promise.all(putFiles);
     }

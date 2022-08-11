@@ -11,23 +11,23 @@ const inputs = {
   private_key: process.env.PRIVATE_KEY,
   include_dotfiles: true,
   dry_run: false,
-  source: "src",
+  source: ["src"],
   target: ".",
 } as any;
 
 let client: Client;
 
 const mockGetInput = () => {
-  beforeAll(() => {
-    jest
-      .spyOn(core, "getInput")
-      .mockImplementation((name: string, options?: core.InputOptions) => {
-        if (options?.required && !inputs[name]) {
-          throw new Error(`Input '${name}' is required`);
-        }
-        return inputs[name];
-      });
+  const mock = (name: string, options?: core.InputOptions) => {
+    if (options?.required && !inputs[name]) {
+      throw new Error(`Input '${name}' is required`);
+    }
+    return inputs[name];
+  };
 
+  beforeAll(() => {
+    jest.spyOn(core, "getInput").mockImplementation(mock);
+    jest.spyOn(core, "getMultilineInput").mockImplementation(mock);
     jest
       .spyOn(core, "getBooleanInput")
       .mockImplementation((name: string) => !!inputs[name]);
@@ -139,7 +139,7 @@ describe("action", () => {
       expect.anything()
     );
 
-    inputs.source = "src";
+    inputs.source = ["src"];
   });
 
   it("doesn't execute commands or upload files when dry_run is true", async () => {
@@ -154,5 +154,27 @@ describe("action", () => {
     expect(exec).not.toBeCalled();
 
     inputs.dry_run = false;
+  });
+
+  it("uploads multiple source folders", async () => {
+    inputs.source = ["src", ".github"];
+
+    const putFile = jest.spyOn(action, "putFile");
+
+    await action.run();
+
+    expect(putFile).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/tests.yml$/),
+      expect.anything()
+    );
+
+    expect(putFile).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/index.ts$/),
+      expect.anything()
+    );
+
+    inputs.source = ["src"];
   });
 });
