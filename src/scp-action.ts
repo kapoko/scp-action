@@ -132,7 +132,7 @@ function* splitMapToChunks<T>(map: Map<string, string>, n: number) {
   }
 }
 
-const handleError = (e: unknown) => {
+export const handleError = (e: unknown) => {
   console.log(
     "Encountered an error. Full details:\n",
     "\x1b[31m",

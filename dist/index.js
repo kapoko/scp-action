@@ -42,7 +42,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.exec = exports.putFile = exports.connect = void 0;
+exports.run = exports.handleError = exports.exec = exports.putFile = exports.connect = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const path_1 = __nccwpck_require__(1017);
 const core = __importStar(__nccwpck_require__(2186));
@@ -143,6 +143,7 @@ const handleError = (e) => {
     console.log("Encountered an error. Full details:\n", "\x1b[31m", e, "\x1b[0m");
     core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
+exports.handleError = handleError;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const source = core.getMultilineInput("source", { required: true });
@@ -164,7 +165,7 @@ function run() {
             port: parseInt(core.getInput("proxy_port")) || 22,
             privateKey: core.getInput("proxy_private_key"),
         };
-        const client = yield (0, exports.connect)(hostConfig, proxyConfig.host ? proxyConfig : undefined).catch(handleError);
+        const client = yield (0, exports.connect)(hostConfig, proxyConfig.host ? proxyConfig : undefined).catch(exports.handleError);
         if (!client)
             return false;
         try {
@@ -230,7 +231,7 @@ function run() {
                 yield execPrettyPrint(client, commandAfter);
         }
         catch (e) {
-            handleError(e);
+            (0, exports.handleError)(e);
         }
         finally {
             client.end();

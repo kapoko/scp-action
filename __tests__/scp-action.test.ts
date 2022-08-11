@@ -108,10 +108,12 @@ describe("action", () => {
 
   it("runs", async () => {
     const failed = jest.spyOn(core, "setFailed");
+    const handleError = jest.spyOn(action, "handleError");
 
     const run = action.run();
 
     await expect(run).resolves.not.toThrow();
+    await expect(handleError).not.toHaveBeenCalled();
     await expect(failed).not.toHaveBeenCalled();
   });
 
@@ -127,7 +129,7 @@ describe("action", () => {
 
   it("doesn't upload hidden files when include_dotfiles is false", async () => {
     inputs.include_dotfiles = false;
-    inputs.source = ".";
+    inputs.source = ["."];
 
     const putFile = jest.spyOn(action, "putFile");
 
