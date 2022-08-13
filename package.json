@@ -24,7 +24,7 @@
     "setupFiles": [
       "dotenv/config"
     ],
-    "testTimeout": 10000
+    "testTimeout": 15000
   },
   "dependencies": {
     "@actions/core": "^1.9.0",

@@ -151,6 +151,7 @@ function run() {
         const command = core.getInput("command");
         const commandAfter = core.getInput("command_after");
         const dryRun = core.getBooleanInput("dry_run");
+        const preserveHierarchy = core.getBooleanInput("preserve_hierarchy");
         const hostConfig = {
             host: core.getInput("host", { required: true }),
             username: core.getInput("username", { required: true }),
@@ -183,20 +184,22 @@ function run() {
             // Search all directories for each line in source and return its remote counterpart path
             const [directories, files] = source.reduce(([directories, files], searchDir) => {
                 const localDirs = glob_1.default.sync(searchDir + "/**/*/", globOptions);
-                const searchRoot = searchDir.endsWith("/")
-                    ? searchDir
-                    : (0, path_1.dirname)(searchDir);
+                const pathBase = preserveHierarchy
+                    ? "."
+                    : searchDir.endsWith("/")
+                        ? searchDir
+                        : (0, path_1.dirname)(searchDir);
                 // If there's no trailing slash we should also create the local directory on the remote
-                if (!searchDir.endsWith("/"))
+                if (!searchDir.endsWith("/") || preserveHierarchy)
                     localDirs.push((0, path_1.resolve)(searchDir));
-                const remoteDirs = localDirs.map((localDir) => (0, path_1.join)(target, (0, path_1.relative)(searchRoot, localDir)));
+                const remoteDirs = localDirs.map((localDir) => (0, path_1.join)(target, (0, path_1.relative)(pathBase, localDir)));
                 const localFiles = glob_1.default.sync(searchDir + "/**/*", Object.assign(Object.assign({}, globOptions), { nodir: true }));
                 // Create a new file map and prepend the current found files
                 const fileMap = new Map((function* () {
                     yield* files;
                     yield* localFiles.map((f) => [
                         f,
-                        (0, path_1.join)(target, (0, path_1.relative)(searchRoot, (0, path_1.dirname)(f)), (0, path_1.basename)(f)),
+                        (0, path_1.join)(target, (0, path_1.relative)(pathBase, (0, path_1.dirname)(f)), (0, path_1.basename)(f)),
                     ]);
                 })());
                 return [[...directories, ...remoteDirs], fileMap];
