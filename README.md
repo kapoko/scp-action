@@ -18,6 +18,46 @@ Github action for copying folders from your repository to a remote host with scp
       target: path/to/project # You can use a relative path
 ```
 After deployment folder `dist` will be at `path/to/project/dist` on the server.
+
+## Options
+
+- `host`: *string* [required]: Hostname or IP of the remote host
+- `username`: *string* [required]: Remote host ssh username
+- `password`: *string*: Remote host ssh password
+- `port`: *number*: Remote host ssh port (default `22`)
+- `private_key`: *string*: Content of private key. (e.g. content of ~/.ssh/id_rsa)
+- `proxy_host`: *string*:  Hostname or IP of the proxy host
+- `proxy_username`: *string*: Proxy host ssh username
+- `proxy_password`: *string*: Proxy host ssh password
+- `proxy_port`: *number*: Proxy host ssh port (default `22`)
+- `proxy_private_key`: *string*: Content of proxy private key. (e.g. content of ~/.ssh/id_rsa)
+- `command`: *string*: Shell command to be run *before* uploading files
+- `command_after`: *string*: Shell command to be run *after* uploading files
+- `source`: *string* [required]: Relative path(s) of the local folder to be uploaded
+  - Multiple source folders are supported.
+  ```yaml
+  source: |
+    dist
+    some/other/path
+  ```
+- `target`: *string* [required]: Path on the remote host
+- `include_dotfiles`: *boolean*: Include files starting with a dot (default `true`)
+- `dry_run`: *boolean*: Connect to the host but don't actually upload files or execute commands (default `false`)
+- `preserve_hierarchy`: *boolean*: keep folder structure of given source paths intact when copying to the remote (see below for an example) (default `false`)
+
+  - Tells the action to keep the relative paths in the repo intact, instead of only copying the folder itself to the remote. This can be handy for copying artefacts from different places in your repository to the remote in one go. Consider the following sources and target:
+    ```yaml
+    source: |
+      dist
+      some/other/path/public
+    target: remotePath
+    ```
+    When `preserve_hierarchy` is `false` (default) this configuration will result in `/remotePath/dist` and `/remotePath/public`. 
+
+    When `preserve_hierarchy` is `true` it will result in `remotePath/dist` and `remotePath/some/other/path/public`.
+
+## More examples
+
 ### Copy folder to a remote host by jumping through a proxy host
 ```yaml
   - name: Upload files through proxy
@@ -74,40 +114,6 @@ Because `preserve_hierarchy` is set to `true` the result will be `path/to/projec
         composer install && \
         echo 'All done!' 
 ``` 
-
-## Options
-
-- **host**: *string* [required]: Hostname or IP of the remote host
-- **username**: *string* [required]: Remote host ssh username
-- **password**: *string*: Remote host ssh password
-- **port**: *number*: Remote host ssh port (default `22`)
-- **private_key**: *string*: Content of server private key. (e.g. content of ~/.ssh/id_rsa)
-- **proxy_host**: *string*:  Hostname or IP of the proxy host
-- **proxy_username**: *string*: Proxy host ssh username
-- **proxy_password**: *string*: Proxy host ssh password
-- **proxy_port**: *number*: Proxy host ssh port (default `22`)
-- **proxy_private_key**: *string*: Content of proxy server private key. (e.g. content of ~/.ssh/id_rsa)
-- **command**: *string*: Shell command to be run *before* uploading files
-- **command_after**: *string*: Shell command to be run *after* uploading files
-- **source**: *string* [required]: Relative path of the local folder to be uploaded
-- **target**: *string* [required]: Path on the remote host
-- **include_dotfiles**: *boolean*: Include files starting with a dot (default `true`)
-- **dry_run**: *boolean*: Connect to the host but don't actually upload files or execute commands (default `false`)
-- **preserve_hierarchy**: *boolean*: keep folder structure of given source paths intact when copying to the remote (see below for an example) (default `false`)
-
-### Some extra context
-
-- #### `preserve_hierarchy`
-Tells the action to keep the relative paths in the repo intact, instead of only copying the folder itself to the remote. This can be handy for copying artefacts from different places to the remote in one go. Consider the following sources and target:
-```yaml
-source: |
-  dist
-  some/other/path/public
-target: remotePath
-```
-When `preserve_hierarchy` is `false` (default) this configuration will result in `/remotePath/dist` and `/remotePath/public`. 
-
-When `preserve_hierarchy` is `true` it will result in `remotePath/dist` and `remotePath/some/other/path/public`.
 
 ## Development
 
