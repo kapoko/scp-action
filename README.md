@@ -44,6 +44,21 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
       source: dist
       target: path/to/dist
 ```
+### Copy multiple source folders and preserving hierarchy
+```yaml
+  - name: Upload multiple source folders
+    uses: kapoko/scp-action@v0
+    with:
+      host: ${{ secrets.HOST }}
+      username: ${{ secrets.USERNAME }}
+      password: ${{ secrets.PASSWORD }}
+      source: |
+        dist
+        other/path/public
+      target: path/to/project
+      preserve_hierarchy: true
+```
+Because `preserve_hierarchy` is set to `true` the result will be `path/to/project/dist` and `path/to/project/other/path/public`.
 ### Execute command before and/or after upload
 ```yaml
   - name: Upload files and execute commands
@@ -59,24 +74,40 @@ Note the trailing slash after `dist/`. Now only the *contents of dist* will be i
         composer install && \
         echo 'All done!' 
 ``` 
+
 ## Options
 
 - **host**: *string* [required]: Hostname or IP of the remote host
 - **username**: *string* [required]: Remote host ssh username
 - **password**: *string*: Remote host ssh password
-- **port**: *number*: Remote host ssh port (default ```22```)
+- **port**: *number*: Remote host ssh port (default `22`)
 - **private_key**: *string*: Content of server private key. (e.g. content of ~/.ssh/id_rsa)
 - **proxy_host**: *string*:  Hostname or IP of the proxy host
 - **proxy_username**: *string*: Proxy host ssh username
 - **proxy_password**: *string*: Proxy host ssh password
-- **proxy_port**: *number*: Proxy host ssh port (default ```22```)
+- **proxy_port**: *number*: Proxy host ssh port (default `22`)
 - **proxy_private_key**: *string*: Content of proxy server private key. (e.g. content of ~/.ssh/id_rsa)
 - **command**: *string*: Shell command to be run *before* uploading files
 - **command_after**: *string*: Shell command to be run *after* uploading files
 - **source**: *string* [required]: Relative path of the local folder to be uploaded
 - **target**: *string* [required]: Path on the remote host
-- **include_dotfiles**: *boolean*: Include files starting with a dot (default ```true```)
-- **dry_run**: *boolean*: Connect to the host but don't actually upload files or execute commands (default ```false```)
+- **include_dotfiles**: *boolean*: Include files starting with a dot (default `true`)
+- **dry_run**: *boolean*: Connect to the host but don't actually upload files or execute commands (default `false`)
+- **preserve_hierarchy**: *boolean*: keep folder structure of given source paths intact when copying to the remote (see below for an example) (default `false`)
+
+### Some extra context
+
+- #### `preserve_hierarchy`
+Tells the action to keep the relative paths in the repo intact, instead of only copying the folder itself to the remote. This can be handy for copying artefacts from different places to the remote in one go. Consider the following sources and target:
+```yaml
+source: |
+  dist
+  some/other/path/public
+target: remotePath
+```
+When `preserve_hierarchy` is `false` (default) this configuration will result in `/remotePath/dist` and `/remotePath/public`. 
+
+When `preserve_hierarchy` is `true` it will result in `remotePath/dist` and `remotePath/some/other/path/public`.
 
 ## Development
 

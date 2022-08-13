@@ -148,6 +148,7 @@ export async function run() {
   const command = core.getInput("command");
   const commandAfter = core.getInput("command_after");
   const dryRun = core.getBooleanInput("dry_run");
+  const preserveHierarchy = core.getBooleanInput("preserve_hierarchy");
 
   const hostConfig = {
     host: core.getInput("host", { required: true }),
@@ -191,15 +192,18 @@ export async function run() {
     const [directories, files] = source.reduce(
       ([directories, files], searchDir) => {
         const localDirs = glob.sync(searchDir + "/**/*/", globOptions);
-        const searchRoot = searchDir.endsWith("/")
+        const pathBase = preserveHierarchy
+          ? "."
+          : searchDir.endsWith("/")
           ? searchDir
           : dirname(searchDir);
 
         // If there's no trailing slash we should also create the local directory on the remote
-        if (!searchDir.endsWith("/")) localDirs.push(resolve(searchDir));
+        if (!searchDir.endsWith("/") || preserveHierarchy)
+          localDirs.push(resolve(searchDir));
 
         const remoteDirs = localDirs.map((localDir) =>
-          join(target, relative(searchRoot, localDir))
+          join(target, relative(pathBase, localDir))
         );
 
         const localFiles = glob.sync(searchDir + "/**/*", {
@@ -213,7 +217,7 @@ export async function run() {
             yield* files;
             yield* localFiles.map((f) => [
               f,
-              join(target, relative(searchRoot, dirname(f)), basename(f)),
+              join(target, relative(pathBase, dirname(f)), basename(f)),
             ]);
           })()
         );

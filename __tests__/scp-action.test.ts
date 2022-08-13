@@ -11,8 +11,9 @@ const inputs = {
   private_key: process.env.PRIVATE_KEY,
   include_dotfiles: true,
   dry_run: false,
-  source: ["src"],
+  source: ["src", "dist/build"],
   target: ".",
+  preserve_hierarchy: false,
 } as any;
 
 let client: Client;
@@ -178,5 +179,28 @@ describe("action", () => {
     );
 
     inputs.source = ["src"];
+  });
+
+  it("preserves hierarchy when it needs to", async () => {
+    inputs.preserve_hierarchy = true;
+    inputs.source = ["src", ".github/workflows/"];
+
+    const exec = jest.spyOn(action, "exec");
+    const putFile = jest.spyOn(action, "putFile");
+
+    await action.run();
+
+    expect(exec).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/.github\/workflows/)
+    );
+
+    expect(putFile).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringMatching(/.github\/workflows\/tests.yml/),
+      expect.anything()
+    );
+
+    inputs.preserve_hierarchy = false;
   });
 });

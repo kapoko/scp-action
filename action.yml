@@ -42,6 +42,9 @@ inputs:
   dry_run:
     description: "connect to the host but don't actually upload files or execute commands"
     default: false
+  preserve_hierarchy: 
+    description: "keep folder structure of given source paths intact when copying to the remote "
+    default: false
 
 runs:
   using: 'node16'
