@@ -15,7 +15,7 @@ Github action for copying folders from your repository to a remote host with scp
       username: ${{ secrets.USERNAME }}
       password: ${{ secrets.PASSWORD }}
       source: dist
-      target: path/to/project # You can use a relative path
+      target: path/to/project # Relative to home of the user, absolute paths also supported
 ```
 After deployment folder `dist` will be at `path/to/project/dist` on the server.
 
@@ -70,7 +70,7 @@ After deployment folder `dist` will be at `path/to/project/dist` on the server.
       proxy_username: ${{ secrets.PROXY_USERNAME }}
       proxy_password: ${{ secrets.PROXY_PASSWORD }}
       source: dist/
-      target: /www/path/to/project # Or an absolute path
+      target: /www/path/to/project
 ```
 Note the trailing slash after `dist/`. Now only the *contents of dist* will be inside `/www/path/to/project`.
 ### Copy folder to a remote host with a private key
