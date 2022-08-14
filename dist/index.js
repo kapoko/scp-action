@@ -221,7 +221,7 @@ function run() {
                 }
             }
             // Upload files
-            for (const chunk of [...splitMapToChunks(files, 64)]) {
+            for (const chunk of splitMapToChunks(files, 64)) {
                 const putFiles = chunk.map(([f, remoteFilePath]) => !dryRun
                     ? (0, exports.putFile)(sftp, f, remoteFilePath)
                         .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))

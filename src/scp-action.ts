@@ -121,7 +121,7 @@ const execPrettyPrint = async (client: Client, command: string) => {
   console.log(`---------------------`);
 };
 
-function* splitMapToChunks<T>(map: Map<string, string>, n: number) {
+function* splitMapToChunks(map: Map<string, string>, n: number) {
   for (let i = 0; i < map.size; i += n) {
     yield Array.from(map).slice(i, i + n);
   }
@@ -240,7 +240,7 @@ export async function run() {
     }
 
     // Upload files
-    for (const chunk of [...splitMapToChunks(files, 64)]) {
+    for (const chunk of splitMapToChunks(files, 64)) {
       const putFiles = chunk.map(([f, remoteFilePath]) =>
         !dryRun
           ? putFile(sftp, f, remoteFilePath)
