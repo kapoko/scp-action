@@ -89,25 +89,21 @@ export const putFile = (sftp: SFTPWrapper, source: string, target: string) =>
   });
 
 export const exec = (client: Client, command: string) =>
-  new Promise<string[]>((resolve, reject) => {
+  new Promise<void>((resolve, reject) => {
     client.exec(command, (err, channel) => {
       if (err) {
         reject(err);
       }
 
-      let output: string[] = [];
+      channel.stderr.on("data", (chunk: Buffer) =>
+        process.stderr.write("err: " + chunk.toString())
+      );
 
-      channel.stderr.on("data", (chunk: Buffer) => {
-        output.push("err: " + chunk.toString());
-      });
+      channel.on("data", (chunk: Buffer) =>
+        process.stdout.write("out: " + chunk.toString())
+      );
 
-      channel.on("data", (chunk: Buffer) => {
-        output.push("out: " + chunk.toString());
-      });
-
-      channel.on("close", () => {
-        resolve(output);
-      });
+      channel.on("close", resolve);
     });
   });
 
@@ -116,8 +112,7 @@ const execPrettyPrint = async (client: Client, command: string) => {
   console.log(`------ command ------`);
   console.log(command);
   console.log(`------ output -------`);
-  const result = await exec(client, command);
-  result.map((str) => process.stdout.write(str));
+  await exec(client, command);
   console.log(`---------------------`);
 };
 

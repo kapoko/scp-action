@@ -112,16 +112,9 @@ const exec = (client, command) => new Promise((resolve, reject) => {
         if (err) {
             reject(err);
         }
-        let output = [];
-        channel.stderr.on("data", (chunk) => {
-            output.push("err: " + chunk.toString());
-        });
-        channel.on("data", (chunk) => {
-            output.push("out: " + chunk.toString());
-        });
-        channel.on("close", () => {
-            resolve(output);
-        });
+        channel.stderr.on("data", (chunk) => process.stderr.write("err: " + chunk.toString()));
+        channel.on("data", (chunk) => process.stdout.write("out: " + chunk.toString()));
+        channel.on("close", resolve);
     });
 });
 exports.exec = exec;
@@ -130,8 +123,7 @@ const execPrettyPrint = (client, command) => __awaiter(void 0, void 0, void 0, f
     console.log(`------ command ------`);
     console.log(command);
     console.log(`------ output -------`);
-    const result = yield (0, exports.exec)(client, command);
-    result.map((str) => process.stdout.write(str));
+    yield (0, exports.exec)(client, command);
     console.log(`---------------------`);
 });
 function* splitMapToChunks(map, n) {
