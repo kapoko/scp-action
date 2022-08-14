@@ -9,11 +9,6 @@ core.setSecret("key");
 core.setSecret("proxy_password");
 core.setSecret("proxy_key");
 
-interface sourceTargetPair {
-  source: string;
-  target: string;
-}
-
 export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
   new Promise<Client>((resolve, reject) => {
     const client = new Client();
