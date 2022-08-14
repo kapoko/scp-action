@@ -35,11 +35,11 @@ After deployment folder `dist` will be at `path/to/project/dist` on the server.
 - `command_after`: *string*: Shell command to be run *after* uploading files
 - `source`: *string* [required]: Relative path(s) of the local folder to be uploaded
   - Multiple source folders are supported.
-  ```yaml
-  source: |
-    dist
-    some/other/path
-  ```
+    ```yaml
+    source: |
+      dist
+      some/other/path
+    ```
 - `target`: *string* [required]: Path on the remote host
 - `include_dotfiles`: *boolean*: Include files starting with a dot (default `true`)
 - `dry_run`: *boolean*: Connect to the host but don't actually upload files or execute commands (default `false`)
