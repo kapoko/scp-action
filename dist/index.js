@@ -205,7 +205,7 @@ function run() {
             for (const dir of directories) {
                 try {
                     !dryRun && (yield (0, exports.exec)(client, `mkdir -p ${dir}`));
-                    console.log(`📁 Created remote dir ${dir}`);
+                    console.log(`📁 ${dryRun && "[DRY-RUN] "}Created remote dir ${dir}`);
                 }
                 catch (e) {
                     console.log(`🛑 There was a problem creating folder ${dir}`);
