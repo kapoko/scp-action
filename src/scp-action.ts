@@ -30,13 +30,19 @@ export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
       resolve(client);
     });
 
-    client.on("end", () => {
-      console.log("🌐 Connection end");
-    });
-
     client.on("close", () => {
       reject(new Error("No response from server"));
     });
+  });
+
+const end = (client: Client) =>
+  new Promise<void>((resolve) => {
+    client.on("end", () => {
+      console.log("🌐 Connection end");
+      resolve();
+    });
+
+    client.end();
   });
 
 const jumpHost = (client: Client, config: ConnectConfig) =>
@@ -133,8 +139,8 @@ export const handleError = (e: unknown) => {
 };
 
 export async function run() {
-  const source = core.getMultilineInput("source", { required: true });
-  const target = core.getInput("target", { required: true });
+  const source = core.getMultilineInput("source") || [];
+  const target = core.getInput("target");
   const command = core.getInput("command");
   const commandAfter = core.getInput("command_after");
   const dryRun = core.getBooleanInput("dry_run");
@@ -227,7 +233,9 @@ export async function run() {
     for (const dir of directories) {
       try {
         !dryRun && (await exec(client, `mkdir -p ${dir}`));
-        console.log(`📁 ${dryRun && "[DRY-RUN] "}Created remote dir ${dir}`);
+        console.log(
+          `📁 ${dryRun ? "[DRY-RUN] " : ""}Created remote dir ${dir}`
+        );
       } catch (e) {
         console.log(`🛑 There was a problem creating folder ${dir}`);
         throw e;
@@ -240,7 +248,10 @@ export async function run() {
         !dryRun
           ? putFile(sftp, f, remoteFilePath)
               .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
-              .catch((e) => console.log(`🛑 Error with file ${f}`, e))
+              .catch((e) => {
+                console.log(`🛑 Error with file ${f}`, e);
+                throw e;
+              })
           : Promise.resolve()
       );
 
@@ -252,6 +263,6 @@ export async function run() {
   } catch (e) {
     handleError(e);
   } finally {
-    client.end();
+    await end(client);
   }
 }

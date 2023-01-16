@@ -32,10 +32,8 @@ inputs:
     description: 'optional command to be run after the scp action is run'
   source: 
     description: 'relative path of the local folder to be uploaded'
-    required: true
   target: 
     description: 'path on the remote host'
-    required: true
   include_dotfiles: 
     description: 'wether or not to include files starting with a dot'
     default: true

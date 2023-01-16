@@ -4,7 +4,7 @@ import * as core from "@actions/core";
 import { Client } from "ssh2";
 import * as action from "../src/scp-action";
 
-const inputs = {
+let inputs = {
   host: process.env.HOST,
   port: parseInt(process.env.PORT || ""),
   username: process.env.USERNAME,
@@ -15,6 +15,7 @@ const inputs = {
   target: ".",
   preserve_hierarchy: false,
 } as any;
+const inputsPristine = Object.freeze(inputs);
 
 let client: Client;
 
@@ -36,9 +37,6 @@ const mockGetInput = () => {
 };
 
 describe("ssh client", () => {
-  beforeAll(() => {
-    console.log = jest.fn();
-  });
   mockGetInput();
 
   it("can connect with a private key", async () => {
@@ -101,8 +99,11 @@ describe("ssh client", () => {
 
 describe("action", () => {
   beforeAll(() => {
-    console.log = jest.fn();
     process.stdout.write = jest.fn();
+  });
+
+  afterEach(() => {
+    inputs = inputsPristine;
   });
 
   mockGetInput();
@@ -119,8 +120,11 @@ describe("action", () => {
   });
 
   it("executes commands", async () => {
-    inputs.command = "echo hello";
-    inputs.command_after = "echo there!";
+    inputs = {
+      ...inputsPristine,
+      command: "echo hello",
+      command_after: "echo there!",
+    };
 
     await action.run();
 
@@ -128,9 +132,28 @@ describe("action", () => {
     expect(process.stdout.write).toHaveBeenCalledWith("out: there!\n");
   });
 
+  it("execute commands without supplying source & target paths", async () => {
+    inputs = {
+      ...inputsPristine,
+      source: null,
+      target: null,
+      command: "echo hello",
+    };
+
+    const putFile = jest.spyOn(action, "putFile");
+
+    await action.run();
+
+    expect(putFile).not.toBeCalled();
+    expect(process.stdout.write).toHaveBeenCalledWith("out: hello\n");
+  });
+
   it("doesn't upload hidden files when include_dotfiles is false", async () => {
-    inputs.include_dotfiles = false;
-    inputs.source = ["."];
+    inputs = {
+      ...inputsPristine,
+      include_dotfiles: false,
+      source: ["."],
+    };
 
     const putFile = jest.spyOn(action, "putFile");
 
@@ -141,12 +164,10 @@ describe("action", () => {
       expect.stringMatching(/.env.example$/),
       expect.anything()
     );
-
-    inputs.source = ["src"];
   });
 
   it("doesn't execute commands or upload files when dry_run is true", async () => {
-    inputs.dry_run = true;
+    inputs = { ...inputsPristine, dry_run: true };
 
     const putFile = jest.spyOn(action, "putFile");
     const exec = jest.spyOn(action, "exec");
@@ -155,12 +176,10 @@ describe("action", () => {
 
     expect(putFile).not.toBeCalled();
     expect(exec).not.toBeCalled();
-
-    inputs.dry_run = false;
   });
 
   it("uploads multiple source folders", async () => {
-    inputs.source = ["src", ".github"];
+    inputs = { ...inputsPristine, source: ["src", ".github"] };
 
     const putFile = jest.spyOn(action, "putFile");
 
@@ -177,13 +196,14 @@ describe("action", () => {
       expect.stringMatching(/index.ts$/),
       expect.anything()
     );
-
-    inputs.source = ["src"];
   });
 
   it("preserves hierarchy when it needs to", async () => {
-    inputs.preserve_hierarchy = true;
-    inputs.source = ["src", ".github/workflows/"];
+    inputs = {
+      ...inputsPristine,
+      preserve_hierarchy: true,
+      source: ["src", ".github/workflows/"],
+    };
 
     const exec = jest.spyOn(action, "exec");
     const putFile = jest.spyOn(action, "putFile");
@@ -200,7 +220,5 @@ describe("action", () => {
       expect.stringMatching(/.github\/workflows\/tests.yml/),
       expect.anything()
     );
-
-    inputs.preserve_hierarchy = false;
   });
 });
