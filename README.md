@@ -114,7 +114,16 @@ Because `preserve_hierarchy` is set to `true` the result will be `path/to/projec
         composer install && \
         echo 'All done!' 
 ``` 
-
+### Just execute a command
+```yaml
+  - name: Execute on remote
+    uses: kapoko/scp-action@v0
+    with:
+      host: ${{ secrets.HOST }}
+      username: ${{ secrets.USERNAME }}
+      private_key: ${{ secrets.PRIVATE_KEY }}
+      command: whoami
+``` 
 ## Development
 
 *Warning:* although I'll try to keep it to a minimum, there might be breaking changes for the ```v0``` version of this action, until it hits `v1`.
