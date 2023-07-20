@@ -130,3 +130,8 @@ Because `preserve_hierarchy` is set to `true` the result will be `path/to/projec
 
 The action is written in Typescript so it runs immediately on Github's javascript runners without the need to build Docker images, which makes for FAST deployments 🚀. Uses [mscdex/ssh2](https://github.com/mscdex/ssh2).
 
+### Local testing
+
+```
+act -P ubuntu-latest=catthehacker/ubuntu:act-20.04 --secret-file .env
+```

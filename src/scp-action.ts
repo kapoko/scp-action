@@ -1,7 +1,7 @@
 import { statSync, lstatSync, existsSync } from "fs";
 import { resolve, dirname, join, basename, relative } from "path";
 import * as core from "@actions/core";
-import glob from "glob";
+import { globSync, GlobOptionsWithFileTypesFalse } from "glob";
 import { Client, SFTPWrapper, ConnectConfig } from "ssh2";
 
 core.setSecret("password");
@@ -139,6 +139,7 @@ export const handleError = (e: unknown) => {
 };
 
 export async function run() {
+  console.log("jo");
   const source = core.getMultilineInput("source") || [];
   const target = core.getInput("target");
   const command = core.getInput("command");
@@ -172,9 +173,10 @@ export async function run() {
   try {
     const sftp = await requestSFTP(client);
 
-    const globOptions: glob.IOptions = {
+    const globOptions: GlobOptionsWithFileTypesFalse = {
+      withFileTypes: false,
       dot: core.getBooleanInput("include_dotfiles"),
-      ignore: ["./node_modules/**/*", "./.git/**/*"],
+      ignore: ["node_modules/**/*", ".git/**/*"],
     };
 
     // Checks
@@ -187,7 +189,8 @@ export async function run() {
     // Search all directories for each line in source and return its remote counterpart path
     const [directories, files] = source.reduce(
       ([directories, files], searchDir) => {
-        const localDirs = glob.sync(searchDir + "/**/*/", globOptions);
+        const localDirs = globSync(searchDir + "/**/*/", globOptions);
+        console.log(localDirs);
         const pathBase = preserveHierarchy
           ? "."
           : searchDir.endsWith("/")
@@ -202,7 +205,7 @@ export async function run() {
           join(target, relative(pathBase, localDir))
         );
 
-        const localFiles = glob.sync(searchDir + "/**/*", {
+        const localFiles = globSync(searchDir + "/**/*", {
           ...globOptions,
           nodir: true,
         });
