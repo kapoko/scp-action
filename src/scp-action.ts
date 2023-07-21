@@ -139,7 +139,6 @@ export const handleError = (e: unknown) => {
 };
 
 export async function run() {
-  console.log("jo");
   const source = core.getMultilineInput("source") || [];
   const target = core.getInput("target");
   const command = core.getInput("command");
@@ -190,7 +189,6 @@ export async function run() {
     const [directories, files] = source.reduce(
       ([directories, files], searchDir) => {
         const localDirs = globSync(searchDir + "/**/*/", globOptions);
-        console.log(localDirs);
         const pathBase = preserveHierarchy
           ? "."
           : searchDir.endsWith("/")

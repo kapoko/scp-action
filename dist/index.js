@@ -139,7 +139,6 @@ const handleError = (e) => {
 exports.handleError = handleError;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log("jo");
         const source = core.getMultilineInput("source") || [];
         const target = core.getInput("target");
         const command = core.getInput("command");
@@ -179,7 +178,6 @@ function run() {
             // Search all directories for each line in source and return its remote counterpart path
             const [directories, files] = source.reduce(([directories, files], searchDir) => {
                 const localDirs = (0, glob_1.globSync)(searchDir + "/**/*/", globOptions);
-                console.log(localDirs);
                 const pathBase = preserveHierarchy
                     ? "."
                     : searchDir.endsWith("/")
