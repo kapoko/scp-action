@@ -113,12 +113,16 @@ export const exec = (client: Client, command: string) =>
     });
   });
 
-const execPrettyPrint = async (client: Client, command: string) => {
+const execPrettyPrint = async (
+  client: Client,
+  command: string,
+  dryRun = false
+) => {
   console.log(`🔸 Executing command`);
   console.log(`------ command ------`);
   console.log(command);
   console.log(`------ output -------`);
-  await exec(client, command);
+  !dryRun ? await exec(client, command) : console.log("[DRY-RUN] No ouput");
   console.log(`---------------------`);
 };
 
@@ -228,7 +232,7 @@ export async function run() {
     directories.sort((a, b) => a.length - b.length);
 
     // Execute command
-    if (!dryRun && command) await execPrettyPrint(client, command);
+    if (command) await execPrettyPrint(client, command, dryRun);
 
     // Make directories
     for (const dir of directories) {
@@ -260,7 +264,7 @@ export async function run() {
     }
 
     // Execute command after
-    if (!dryRun && commandAfter) await execPrettyPrint(client, commandAfter);
+    if (commandAfter) await execPrettyPrint(client, commandAfter, dryRun);
   } catch (e) {
     handleError(e);
   } finally {

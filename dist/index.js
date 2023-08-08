@@ -119,12 +119,12 @@ const exec = (client, command) => new Promise((resolve, reject) => {
     });
 });
 exports.exec = exec;
-const execPrettyPrint = (client, command) => __awaiter(void 0, void 0, void 0, function* () {
+const execPrettyPrint = (client, command, dryRun = false) => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`🔸 Executing command`);
     console.log(`------ command ------`);
     console.log(command);
     console.log(`------ output -------`);
-    yield (0, exports.exec)(client, command);
+    !dryRun ? yield (0, exports.exec)(client, command) : console.log("[DRY-RUN] No ouput");
     console.log(`---------------------`);
 });
 function* splitMapToChunks(map, n) {
@@ -201,8 +201,8 @@ function run() {
             // Sort short to long
             directories.sort((a, b) => a.length - b.length);
             // Execute command
-            if (!dryRun && command)
-                yield execPrettyPrint(client, command);
+            if (command)
+                yield execPrettyPrint(client, command, dryRun);
             // Make directories
             for (const dir of directories) {
                 try {
@@ -227,8 +227,8 @@ function run() {
                 yield Promise.all(putFiles);
             }
             // Execute command after
-            if (!dryRun && commandAfter)
-                yield execPrettyPrint(client, commandAfter);
+            if (commandAfter)
+                yield execPrettyPrint(client, commandAfter, dryRun);
         }
         catch (e) {
             (0, exports.handleError)(e);
