@@ -122,7 +122,7 @@ const execPrettyPrint = async (
   console.log(`------ command ------`);
   console.log(command);
   console.log(`------ output -------`);
-  !dryRun ? await exec(client, command) : console.log("[DRY-RUN] No ouput");
+  !dryRun ? await exec(client, command) : console.log("[DRY-RUN] No output");
   console.log(`---------------------`);
 };
 

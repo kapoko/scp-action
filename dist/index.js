@@ -124,7 +124,7 @@ const execPrettyPrint = (client, command, dryRun = false) => __awaiter(void 0, v
     console.log(`------ command ------`);
     console.log(command);
     console.log(`------ output -------`);
-    !dryRun ? yield (0, exports.exec)(client, command) : console.log("[DRY-RUN] No ouput");
+    !dryRun ? yield (0, exports.exec)(client, command) : console.log("[DRY-RUN] No output");
     console.log(`---------------------`);
 });
 function* splitMapToChunks(map, n) {
