@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "tsc -w",
     "package": "npm run build && ncc build",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky"
   },
   "jest": {
     "clearMocks": true,
@@ -37,6 +38,7 @@
     "@types/ssh2": "^1.15.1",
     "@vercel/ncc": "^0.38.3",
     "dotenv": "^16.4.5",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
