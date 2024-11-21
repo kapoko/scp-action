@@ -133,5 +133,5 @@ The action is written in Typescript so it runs immediately on Github's javascrip
 ### Local testing
 
 ```
-act -P ubuntu-latest=catthehacker/ubuntu:act-20.04 --secret-file .env
+act -P ubuntu-latest=catthehacker/ubuntu:act-latest --secret-file .env
 ```

@@ -1,8 +1,10 @@
-import { statSync, lstatSync, existsSync } from "fs";
-import { resolve, dirname, join, basename, relative } from "path";
+import { statSync, lstatSync, existsSync } from "node:fs";
+import { resolve, dirname, join, basename, relative } from "node:path";
 import * as core from "@actions/core";
-import { globSync, GlobOptionsWithFileTypesFalse } from "glob";
-import { Client, SFTPWrapper, ConnectConfig } from "ssh2";
+import { globSync } from "glob";
+import type { GlobOptionsWithFileTypesFalse } from "glob";
+import { Client } from "ssh2";
+import type { SFTPWrapper, ConnectConfig } from "ssh2";
 
 core.setSecret("password");
 core.setSecret("key");
@@ -68,7 +70,7 @@ const jumpHost = (client: Client, config: ConnectConfig) =>
         });
 
         resolve(forwardedClient);
-      }
+      },
     );
   });
 
@@ -102,11 +104,11 @@ export const exec = (client: Client, command: string) =>
       }
 
       channel.stderr.on("data", (chunk: Buffer) =>
-        process.stderr.write("err: " + chunk.toString())
+        process.stderr.write(`err: ${chunk.toString()}`),
       );
 
       channel.on("data", (chunk: Buffer) =>
-        process.stdout.write("out: " + chunk.toString())
+        process.stdout.write(`out: ${chunk.toString()}`),
       );
 
       channel.on("close", resolve);
@@ -116,14 +118,14 @@ export const exec = (client: Client, command: string) =>
 const execPrettyPrint = async (
   client: Client,
   command: string,
-  dryRun = false
+  dryRun = false,
 ) => {
-  console.log(`🔸 Executing command`);
-  console.log(`------ command ------`);
+  console.log("🔸 Executing command");
+  console.log("------ command ------");
   console.log(command);
-  console.log(`------ output -------`);
+  console.log("------ output -------");
   !dryRun ? await exec(client, command) : console.log("[DRY-RUN] No output");
-  console.log(`---------------------`);
+  console.log("---------------------");
 };
 
 function* splitMapToChunks(map: Map<string, string>, n: number) {
@@ -137,7 +139,7 @@ export const handleError = (e: unknown) => {
     "Encountered an error. Full details:\n",
     "\x1b[31m",
     e,
-    "\x1b[0m"
+    "\x1b[0m",
   );
   core.setFailed(e instanceof Error ? e : "Encountered an error");
 };
@@ -154,7 +156,7 @@ export async function run() {
     host: core.getInput("host", { required: true }),
     username: core.getInput("username", { required: true }),
     password: core.getInput("password"),
-    port: parseInt(core.getInput("port")) || 22,
+    port: Number.parseInt(core.getInput("port")) || 22,
     privateKey: core.getInput("private_key"),
   };
 
@@ -162,13 +164,13 @@ export async function run() {
     host: core.getInput("proxy_host"),
     username: core.getInput("proxy_username"),
     password: core.getInput("proxy_password"),
-    port: parseInt(core.getInput("proxy_port")) || 22,
+    port: Number.parseInt(core.getInput("proxy_port")) || 22,
     privateKey: core.getInput("proxy_private_key"),
   };
 
   const client = await connect(
     hostConfig,
-    proxyConfig.host ? proxyConfig : undefined
+    proxyConfig.host ? proxyConfig : undefined,
   ).catch(handleError);
 
   if (!client) return false;
@@ -183,49 +185,52 @@ export async function run() {
     };
 
     // Checks
-    source.forEach((s) => {
+    for (const s of source) {
       if (!existsSync(s) || !lstatSync(s).isDirectory()) {
         throw new Error(`Source "${source}" is not a directory`);
       }
-    });
+    }
 
     // Search all directories for each line in source and return its remote counterpart path
     const [directories, files] = source.reduce(
       ([directories, files], searchDir) => {
-        const localDirs = globSync(searchDir + "/**/*/", globOptions);
+        const localDirs = globSync(`${searchDir}/**/*/`, globOptions);
         const pathBase = preserveHierarchy
           ? "."
           : searchDir.endsWith("/")
-          ? searchDir
-          : dirname(searchDir);
+            ? searchDir
+            : dirname(searchDir);
 
         // If there's no trailing slash we should also create the local directory on the remote
         if (!searchDir.endsWith("/") || preserveHierarchy)
           localDirs.push(resolve(searchDir));
 
         const remoteDirs = localDirs.map((localDir) =>
-          join(target, relative(pathBase, localDir))
+          join(target, relative(pathBase, localDir)),
         );
 
-        const localFiles = globSync(searchDir + "/**/*", {
+        const localFiles = globSync(`${searchDir}/**/*`, {
           ...globOptions,
           nodir: true,
         });
 
         // Create a new file map and prepend the current found files
-        const fileMap = new Map(
+        const fileMap = new Map<string, string>(
           (function* () {
             yield* files;
-            yield* localFiles.map((f) => [
-              f,
-              join(target, relative(pathBase, dirname(f)), basename(f)),
-            ]);
-          })()
+            yield* localFiles.map(
+              (f) =>
+                [
+                  f,
+                  join(target, relative(pathBase, dirname(f)), basename(f)),
+                ] as [string, string],
+            );
+          })(),
         );
 
         return [[...directories, ...remoteDirs], fileMap];
       },
-      [[], new Map()] as [string[], Map<string, string>]
+      [[] as string[], new Map<string, string>()],
     );
 
     // Sort short to long
@@ -239,7 +244,7 @@ export async function run() {
       try {
         !dryRun && (await exec(client, `mkdir -p ${dir}`));
         console.log(
-          `📁 ${dryRun ? "[DRY-RUN] " : ""}Created remote dir ${dir}`
+          `📁 ${dryRun ? "[DRY-RUN] " : ""}Created remote dir ${dir}`,
         );
       } catch (e) {
         console.log(`🛑 There was a problem creating folder ${dir}`);
@@ -257,7 +262,7 @@ export async function run() {
                 console.log(`🛑 Error with file ${f}`, e);
                 throw e;
               })
-          : Promise.resolve()
+          : Promise.resolve(),
       );
 
       await Promise.all(putFiles);

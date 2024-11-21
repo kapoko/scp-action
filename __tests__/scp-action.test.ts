@@ -6,7 +6,7 @@ import * as action from "../src/scp-action";
 
 let inputs = {
   host: process.env.HOST,
-  port: parseInt(process.env.PORT || ""),
+  port: Number.parseInt(process.env.PORT || ""),
   username: process.env.USERNAME,
   private_key: process.env.PRIVATE_KEY,
   include_dotfiles: true,
@@ -68,7 +68,7 @@ describe("ssh client", () => {
       {
         host: process.env.SECOND_HOST,
         username: process.env.SECOND_USERNAME,
-        port: parseInt(process.env.SECOND_PORT || ""),
+        port: Number.parseInt(process.env.SECOND_PORT || ""),
         privateKey: process.env.SECOND_PRIVATE_KEY,
       },
       {
@@ -76,7 +76,7 @@ describe("ssh client", () => {
         username: inputs.username,
         port: inputs.port,
         privateKey: inputs.private_key,
-      }
+      },
     );
 
     expect(client).toBeInstanceOf(Client);
@@ -115,8 +115,8 @@ describe("action", () => {
     const run = action.run();
 
     await expect(run).resolves.not.toThrow();
-    await expect(handleError).not.toHaveBeenCalled();
-    await expect(failed).not.toHaveBeenCalled();
+    expect(handleError).not.toHaveBeenCalled();
+    expect(failed).not.toHaveBeenCalled();
   });
 
   it("executes commands", async () => {
@@ -162,7 +162,7 @@ describe("action", () => {
     expect(putFile).not.toHaveBeenCalledWith(
       expect.anything(),
       expect.stringMatching(/.env.example$/),
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -188,13 +188,13 @@ describe("action", () => {
     expect(putFile).toHaveBeenCalledWith(
       expect.anything(),
       expect.stringMatching(/tests.yml$/),
-      expect.anything()
+      expect.anything(),
     );
 
     expect(putFile).toHaveBeenCalledWith(
       expect.anything(),
       expect.stringMatching(/index.ts$/),
-      expect.anything()
+      expect.anything(),
     );
   });
 
@@ -212,13 +212,13 @@ describe("action", () => {
 
     expect(exec).toHaveBeenCalledWith(
       expect.anything(),
-      expect.stringMatching(/.github\/workflows/)
+      expect.stringMatching(/.github\/workflows/),
     );
 
     expect(putFile).toHaveBeenCalledWith(
       expect.anything(),
       expect.stringMatching(/.github\/workflows\/tests.yml/),
-      expect.anything()
+      expect.anything(),
     );
   });
 });
