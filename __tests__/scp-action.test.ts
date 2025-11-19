@@ -12,7 +12,7 @@ let inputs = {
   include_dotfiles: true,
   dry_run: false,
   source: ["src", "dist/build"],
-  target: ".",
+  target: "scp-action-test",
   preserve_hierarchy: false,
 } as any;
 const inputsPristine = Object.freeze(inputs);
