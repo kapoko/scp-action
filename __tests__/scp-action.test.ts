@@ -144,7 +144,7 @@ describe("action", () => {
 
     await action.run();
 
-    expect(putFile).not.toBeCalled();
+    expect(putFile).not.toHaveBeenCalled();
     expect(process.stdout.write).toHaveBeenCalledWith("out: hello\n");
   });
 
@@ -174,8 +174,8 @@ describe("action", () => {
 
     await action.run();
 
-    expect(putFile).not.toBeCalled();
-    expect(exec).not.toBeCalled();
+    expect(putFile).not.toHaveBeenCalled();
+    expect(exec).not.toHaveBeenCalled();
   });
 
   it("uploads multiple source folders", async () => {
