@@ -1,6 +1,6 @@
 import { statSync, lstatSync, existsSync } from "node:fs";
 import { resolve, dirname, join, basename, relative } from "node:path";
-import * as core from "@actions/core";
+import { core } from "./core.js";
 import { globSync } from "glob";
 import type { GlobOptionsWithFileTypesFalse } from "glob";
 import { Client } from "ssh2";
@@ -11,12 +11,28 @@ core.setSecret("key");
 core.setSecret("proxy_password");
 core.setSecret("proxy_key");
 
+const normalizePrivateKey = (privateKey: ConnectConfig["privateKey"]) => {
+  if (typeof privateKey !== "string") return privateKey;
+  return privateKey.replace(/\\n/g, "\n").replace(/\r/g, "");
+};
+
+const normalizeConfig = (config: ConnectConfig): ConnectConfig => ({
+  ...config,
+  privateKey: normalizePrivateKey(config.privateKey),
+});
+
 export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
   new Promise<Client>((resolve, reject) => {
     const client = new Client();
+    const normalizedConfig = normalizeConfig(config);
+    const normalizedProxyConfig = proxyConfig
+      ? normalizeConfig(proxyConfig)
+      : undefined;
 
     // If there's a proxy supplied first connect there
-    client.connect(proxyConfig ? proxyConfig : config);
+    client.connect(
+      normalizedProxyConfig ? normalizedProxyConfig : normalizedConfig,
+    );
 
     client.on("error", reject);
 
@@ -25,7 +41,7 @@ export const connect = (config: ConnectConfig, proxyConfig?: ConnectConfig) =>
       console.log("🌐 Connection ready");
 
       if (proxyConfig) {
-        const forwardedClient = jumpHost(client, config);
+        const forwardedClient = jumpHost(client, normalizedConfig);
         return resolve(forwardedClient);
       }
 
@@ -124,7 +140,9 @@ const execPrettyPrint = async (
   console.log("------ command ------");
   console.log(command);
   console.log("------ output -------");
-  !dryRun ? await exec(client, command) : console.log("[DRY-RUN] No output");
+  !dryRun
+    ? await actionApi.exec(client, command)
+    : console.log("[DRY-RUN] No output");
   console.log("---------------------");
 };
 
@@ -142,6 +160,12 @@ export const handleError = (e: unknown) => {
     "\x1b[0m",
   );
   core.setFailed(e instanceof Error ? e : "Encountered an error");
+};
+
+export const actionApi = {
+  exec,
+  putFile,
+  handleError,
 };
 
 export async function run() {
@@ -171,7 +195,7 @@ export async function run() {
   const client = await connect(
     hostConfig,
     proxyConfig.host ? proxyConfig : undefined,
-  ).catch(handleError);
+  ).catch(actionApi.handleError);
 
   if (!client) return false;
 
@@ -242,7 +266,7 @@ export async function run() {
     // Make directories
     for (const dir of directories) {
       try {
-        !dryRun && (await exec(client, `mkdir -p ${dir}`));
+        !dryRun && (await actionApi.exec(client, `mkdir -p ${dir}`));
         console.log(
           `📁 ${dryRun ? "[DRY-RUN] " : ""}Created remote dir ${dir}`,
         );
@@ -256,7 +280,8 @@ export async function run() {
     for (const chunk of splitMapToChunks(files, 64)) {
       const putFiles = chunk.map(([f, remoteFilePath]) =>
         !dryRun
-          ? putFile(sftp, f, remoteFilePath)
+          ? actionApi
+              .putFile(sftp, f, remoteFilePath)
               .then(() => console.log(`✅ Uploaded ${remoteFilePath}`))
               .catch((e) => {
                 console.log(`🛑 Error with file ${f}`, e);
@@ -271,7 +296,7 @@ export async function run() {
     // Execute command after
     if (commandAfter) await execPrettyPrint(client, commandAfter, dryRun);
   } catch (e) {
-    handleError(e);
+    actionApi.handleError(e);
   } finally {
     await end(client);
   }

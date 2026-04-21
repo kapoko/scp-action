@@ -1,14 +1,24 @@
-import { expect, describe, beforeAll } from "@jest/globals";
-import * as core from "@actions/core";
+import {
+  jest,
+  it,
+  expect,
+  describe,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from "@jest/globals";
+import { core } from "../src/core.js";
+import type { InputOptions } from "../src/core.js";
+import { actionApi } from "../src/scp-action";
 
 import { Client } from "ssh2";
 import * as action from "../src/scp-action";
 
 let inputs = {
-  host: process.env.HOST,
-  port: Number.parseInt(process.env.PORT || ""),
-  username: process.env.USERNAME,
-  private_key: process.env.PRIVATE_KEY,
+  host: process.env.SSH_HOST ?? process.env.HOST,
+  port: Number.parseInt(process.env.SSH_PORT ?? process.env.PORT ?? ""),
+  username: process.env.SSH_USERNAME ?? process.env.USERNAME,
+  private_key: process.env.SSH_PRIVATE_KEY ?? process.env.PRIVATE_KEY,
   include_dotfiles: true,
   dry_run: false,
   source: ["src", "dist/build"],
@@ -18,9 +28,17 @@ let inputs = {
 const inputsPristine = Object.freeze(inputs);
 
 let client: Client;
+const describeIntegration =
+  process.env.RUN_INTEGRATION === "true" ? describe : describe.skip;
+
+describe("smoke", () => {
+  it("loads action module", () => {
+    expect(action).toBeDefined();
+  });
+});
 
 const mockGetInput = () => {
-  const mock = (name: string, options?: core.InputOptions) => {
+  const mock = (name: string, options?: InputOptions) => {
     if (options?.required && !inputs[name]) {
       throw new Error(`Input '${name}' is required`);
     }
@@ -36,7 +54,7 @@ const mockGetInput = () => {
   });
 };
 
-describe("ssh client", () => {
+describeIntegration("ssh client", () => {
   mockGetInput();
 
   it("can connect with a private key", async () => {
@@ -66,10 +84,14 @@ describe("ssh client", () => {
   it("can connect through a proxy", async () => {
     client = await action.connect(
       {
-        host: process.env.SECOND_HOST,
-        username: process.env.SECOND_USERNAME,
-        port: Number.parseInt(process.env.SECOND_PORT || ""),
-        privateKey: process.env.SECOND_PRIVATE_KEY,
+        host: process.env.SECOND_SSH_HOST ?? process.env.SECOND_HOST,
+        username:
+          process.env.SECOND_SSH_USERNAME ?? process.env.SECOND_USERNAME,
+        port: Number.parseInt(
+          process.env.SECOND_SSH_PORT ?? process.env.SECOND_PORT ?? "",
+        ),
+        privateKey:
+          process.env.SECOND_SSH_PRIVATE_KEY ?? process.env.SECOND_PRIVATE_KEY,
       },
       {
         host: inputs.host,
@@ -97,9 +119,15 @@ describe("ssh client", () => {
   });
 });
 
-describe("action", () => {
+describeIntegration("action", () => {
+  let stdoutWriteSpy: jest.SpiedFunction<typeof process.stdout.write>;
   beforeAll(() => {
-    process.stdout.write = jest.fn();
+    stdoutWriteSpy = jest
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+  });
+  afterAll(() => {
+    stdoutWriteSpy.mockRestore();
   });
 
   afterEach(() => {
@@ -110,7 +138,7 @@ describe("action", () => {
 
   it("runs", async () => {
     const failed = jest.spyOn(core, "setFailed");
-    const handleError = jest.spyOn(action, "handleError");
+    const handleError = jest.spyOn(actionApi, "handleError");
 
     const run = action.run();
 
@@ -140,7 +168,7 @@ describe("action", () => {
       command: "echo hello",
     };
 
-    const putFile = jest.spyOn(action, "putFile");
+    const putFile = jest.spyOn(actionApi, "putFile");
 
     await action.run();
 
@@ -155,7 +183,7 @@ describe("action", () => {
       source: ["."],
     };
 
-    const putFile = jest.spyOn(action, "putFile");
+    const putFile = jest.spyOn(actionApi, "putFile");
 
     await action.run();
 
@@ -169,8 +197,8 @@ describe("action", () => {
   it("doesn't execute commands or upload files when dry_run is true", async () => {
     inputs = { ...inputsPristine, dry_run: true };
 
-    const putFile = jest.spyOn(action, "putFile");
-    const exec = jest.spyOn(action, "exec");
+    const putFile = jest.spyOn(actionApi, "putFile");
+    const exec = jest.spyOn(actionApi, "exec");
 
     await action.run();
 
@@ -181,7 +209,7 @@ describe("action", () => {
   it("uploads multiple source folders", async () => {
     inputs = { ...inputsPristine, source: ["src", ".github"] };
 
-    const putFile = jest.spyOn(action, "putFile");
+    const putFile = jest.spyOn(actionApi, "putFile");
 
     await action.run();
 
@@ -193,7 +221,7 @@ describe("action", () => {
 
     expect(putFile).toHaveBeenCalledWith(
       expect.anything(),
-      expect.stringMatching(/index.ts$/),
+      expect.stringMatching(/index.cts$/),
       expect.anything(),
     );
   });
@@ -205,8 +233,8 @@ describe("action", () => {
       source: ["src", ".github/workflows/"],
     };
 
-    const exec = jest.spyOn(action, "exec");
-    const putFile = jest.spyOn(action, "putFile");
+    const exec = jest.spyOn(actionApi, "exec");
+    const putFile = jest.spyOn(actionApi, "putFile");
 
     await action.run();
 

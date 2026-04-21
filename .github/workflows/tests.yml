@@ -22,6 +22,7 @@ jobs:
       - name: Run jest tests
         run: npm test
         env:
+          RUN_INTEGRATION: "true"
           HOST: ${{ secrets.HOST }}
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
