@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: false
+  jobs:
+    - name: package
+      run: npm run package
+
+    - name: add build artifacts
+      run: git add dist
