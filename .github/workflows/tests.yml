@@ -15,9 +15,13 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: |
-          npm ci 
-          npm run build
+        run: npm ci 
+
+      - name: Format and lint
+        run: npm run ci 
+
+      - name: Build
+        run: npm run build 
 
       - name: Run jest tests
         run: npm test
