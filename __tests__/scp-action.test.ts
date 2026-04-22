@@ -1,22 +1,38 @@
 import {
-  jest,
-  it,
-  expect,
-  describe,
-  beforeAll,
-  afterEach,
   afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
 } from "@jest/globals";
-import { core } from "../src/core.js";
+import { Client } from "ssh2";
 import type { InputOptions } from "../src/core.js";
+import { core } from "../src/core.js";
+import * as action from "../src/scp-action";
 import { actionApi } from "../src/scp-action";
 
-import { Client } from "ssh2";
-import * as action from "../src/scp-action";
+type TestInputValue = string | number | boolean | string[] | null | undefined;
 
-let inputs = {
+type TestInputs = {
+  host?: string;
+  port?: number;
+  username?: string;
+  private_key?: string;
+  include_dotfiles?: boolean;
+  dry_run?: boolean;
+  source?: string[] | null;
+  target?: string | null;
+  preserve_hierarchy?: boolean;
+  command?: string;
+  command_after?: string;
+  [key: string]: TestInputValue;
+};
+
+let inputs: TestInputs = {
   host: process.env.SSH_HOST ?? process.env.HOST,
-  port: Number.parseInt(process.env.SSH_PORT ?? process.env.PORT ?? ""),
+  port: Number.parseInt(process.env.SSH_PORT ?? process.env.PORT ?? "", 10),
   username: process.env.SSH_USERNAME ?? process.env.USERNAME,
   private_key: process.env.SSH_PRIVATE_KEY ?? process.env.PRIVATE_KEY,
   include_dotfiles: true,
@@ -24,7 +40,7 @@ let inputs = {
   source: ["src", "dist/build"],
   target: "scp-action-test",
   preserve_hierarchy: false,
-} as any;
+};
 const inputsPristine = Object.freeze(inputs);
 
 let client: Client;
@@ -89,6 +105,7 @@ describeIntegration("ssh client", () => {
           process.env.SECOND_SSH_USERNAME ?? process.env.SECOND_USERNAME,
         port: Number.parseInt(
           process.env.SECOND_SSH_PORT ?? process.env.SECOND_PORT ?? "",
+          10,
         ),
         privateKey:
           process.env.SECOND_SSH_PRIVATE_KEY ?? process.env.SECOND_PRIVATE_KEY,

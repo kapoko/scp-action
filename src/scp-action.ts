@@ -1,10 +1,10 @@
-import { statSync, lstatSync, existsSync } from "node:fs";
-import { resolve, dirname, join, basename, relative } from "node:path";
-import { core } from "./core.js";
-import { globSync } from "glob";
+import { existsSync, lstatSync, statSync } from "node:fs";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import type { GlobOptionsWithFileTypesFalse } from "glob";
+import { globSync } from "glob";
+import type { ConnectConfig, SFTPWrapper } from "ssh2";
 import { Client } from "ssh2";
-import type { SFTPWrapper, ConnectConfig } from "ssh2";
+import { core } from "./core.js";
 
 core.setSecret("password");
 core.setSecret("key");
@@ -180,7 +180,7 @@ export async function run() {
     host: core.getInput("host", { required: true }),
     username: core.getInput("username", { required: true }),
     password: core.getInput("password"),
-    port: Number.parseInt(core.getInput("port")) || 22,
+    port: Number.parseInt(core.getInput("port"), 10) || 22,
     privateKey: core.getInput("private_key"),
   };
 
@@ -188,7 +188,7 @@ export async function run() {
     host: core.getInput("proxy_host"),
     username: core.getInput("proxy_username"),
     password: core.getInput("proxy_password"),
-    port: Number.parseInt(core.getInput("proxy_port")) || 22,
+    port: Number.parseInt(core.getInput("proxy_port"), 10) || 22,
     privateKey: core.getInput("proxy_private_key"),
   };
 

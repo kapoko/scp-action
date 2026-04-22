@@ -1,6 +1,9 @@
 pre-commit:
   parallel: false
   jobs:
+    - name: lint and format
+      run: npm run ci
+
     - name: package
       run: npm run package
 

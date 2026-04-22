@@ -6,6 +6,11 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc -w",
+    "ci": "biome ci",
+    "lint": "biome lint",
+    "lint:write": "biome lint --write",
+    "format": "biome format",
+    "format:write": "biome format --write",
     "package": "npm run build && ncc build lib/index.cjs -o dist",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "prepare": "npm run package"
@@ -45,6 +50,7 @@
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
     "@types/ssh2": "^1.15.5",
